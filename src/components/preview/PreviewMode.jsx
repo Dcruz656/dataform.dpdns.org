@@ -39,7 +39,7 @@ function calculateScore(questions, answers) {
   }, 0);
 }
 
-export default function PreviewMode({ surveyConfig, questions, surveyId, onClose }) {
+export default function PreviewMode({ surveyConfig, questions, surveyId, onClose, publicMode = false }) {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [finalScore, setFinalScore] = useState(null);
@@ -78,19 +78,21 @@ export default function PreviewMode({ surveyConfig, questions, surveyId, onClose
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      {/* Preview bar */}
-      <div className="bg-slate-900 text-white px-6 py-3 flex justify-between items-center shadow-md flex-shrink-0">
-        <div className="flex items-center gap-2 text-sm">
-          <Eye size={16} />
-          <span className="font-medium">Modo Previsualización</span>
-          {surveyConfig.conversational && (
-            <span className="ml-2 px-2 py-0.5 bg-blue-600 rounded text-xs font-semibold">Conversacional</span>
-          )}
+      {/* Preview bar — hidden in public mode */}
+      {!publicMode && (
+        <div className="bg-slate-900 text-white px-6 py-3 flex justify-between items-center shadow-md flex-shrink-0">
+          <div className="flex items-center gap-2 text-sm">
+            <Eye size={16} />
+            <span className="font-medium">Modo Previsualización</span>
+            {surveyConfig.conversational && (
+              <span className="ml-2 px-2 py-0.5 bg-blue-600 rounded text-xs font-semibold">Conversacional</span>
+            )}
+          </div>
+          <button onClick={onClose} className="px-4 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-md text-sm transition-colors">
+            Cerrar Vista Previa
+          </button>
         </div>
-        <button onClick={onClose} className="px-4 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-md text-sm transition-colors">
-          Cerrar Vista Previa
-        </button>
-      </div>
+      )}
 
       {surveyConfig.conversational ? (
         <ConversationalView
