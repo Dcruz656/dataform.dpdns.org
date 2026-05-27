@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { LayoutDashboard, PenTool, BarChart3, Palette, Archive, Menu, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { LayoutDashboard, PenTool, BarChart3, Palette, Archive, Menu, X, LogOut } from 'lucide-react';
 import { DEFAULT_QUESTIONS } from './constants';
 import NavItem from './components/NavItem';
 import BuilderView from './components/builder/BuilderView';
@@ -8,23 +8,22 @@ import DashboardView from './views/DashboardView';
 import AnalyticsView from './views/AnalyticsView';
 import AppearanceView from './views/AppearanceView';
 import ArchiveView from './views/ArchiveView';
-
-const INITIAL_SURVEYS = [
-  { id: 1, name: 'Evaluación de Producto Q3',   responses: 1240, status: 'Activa',   statusColor: 'bg-emerald-100 text-emerald-700' },
-  { id: 2, name: 'Satisfacción Postventa Mayo', responses: 318,  status: 'Activa',   statusColor: 'bg-emerald-100 text-emerald-700' },
-  { id: 3, name: 'Onboarding Nuevos Clientes',  responses: 97,   status: 'Borrador', statusColor: 'bg-slate-100 text-slate-600' },
-  { id: 4, name: 'NPS Trimestral Q2',           responses: 0,    status: 'Borrador', statusColor: 'bg-slate-100 text-slate-600' },
-];
+import LoginView from './views/LoginView';
+import { useAuth } from './contexts/AuthContext';
+import { surveysApi, bankApi } from './lib/db';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('builder');
+  const { user, signOut, loading: authLoading } = useAuth();
+
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState({ primary: '#2563eb', font: 'Inter', logo: null });
   const [isPreview, setIsPreview] = useState(false);
+  const [activeSurveyId, setActiveSurveyId] = useState(null);
 
   const [surveyConfig, setSurveyConfig] = useState({
-    title: 'Evaluación de Producto Q3',
-    instructions: 'Por favor, tómese un minuto para ayudarnos a mejorar nuestros servicios.',
+    title: 'Mi Primera Encuesta',
+    instructions: '',
     requireName: false,
     conversational: false,
     timeLimit: false,
@@ -34,34 +33,135 @@ export default function App() {
   });
 
   const [questions, setQuestions] = useState(DEFAULT_QUESTIONS);
-  const [surveys, setSurveys] = useState(INITIAL_SURVEYS);
+  const [surveys, setSurveys] = useState([]);
   const [archivedSurveys, setArchivedSurveys] = useState([]);
+  const [questionBank, setQuestionBank] = useState([]);
+  const [loadingSurveys, setLoadingSurveys] = useState(false);
 
-  const [questionBank, setQuestionBank] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('dataform_bank') || '[]'); }
-    catch { return []; }
-  });
+  const autoSaveTimer = useRef(null);
+  const isMounted = useRef(false);
+
   useEffect(() => {
-    localStorage.setItem('dataform_bank', JSON.stringify(questionBank));
-  }, [questionBank]);
+    if (!user) {
+      setSurveys([]);
+      setQuestionBank([]);
+      return;
+    }
+    loadSurveys();
+    loadBank();
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSaveToBank = (question, title, tags) => {
-    const item = {
-      id: Date.now(),
-      titulo: title || question.text.slice(0, 50) || 'Pregunta sin título',
-      tipo: question.type,
-      configuracion: { ...question, id: undefined, conditions: [], conditionMode: 'show' },
-      etiquetas: typeof tags === 'string' ? tags.split(',').map(t => t.trim()).filter(Boolean) : (tags || []),
-    };
-    setQuestionBank(prev => [item, ...prev]);
+  const loadSurveys = async () => {
+    setLoadingSurveys(true);
+    try {
+      const data = await surveysApi.list(user.id);
+      setSurveys(data);
+    } catch (err) {
+      console.error('Error loading surveys:', err);
+    } finally {
+      setLoadingSurveys(false);
+    }
   };
-  const handleInsertFromBank = (item) => {
-    const newQ = { ...item.configuracion, id: Date.now() + Math.floor(Math.random() * 9999), conditions: [], conditionMode: 'show' };
-    setQuestions(qs => [...qs, newQ]);
+
+  const loadBank = async () => {
+    try {
+      const data = await bankApi.list(user.id);
+      setQuestionBank(data);
+    } catch (err) {
+      console.error('Error loading bank:', err);
+    }
   };
-  const handleDeleteFromBank = (id) => setQuestionBank(prev => prev.filter(b => b.id !== id));
+
+  // Auto-save when builder content changes (debounced 1500ms)
+  useEffect(() => {
+    if (!isMounted.current) { isMounted.current = true; return; }
+    if (!activeSurveyId || !user) return;
+    clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(async () => {
+      try {
+        await surveysApi.update(activeSurveyId, {
+          title: surveyConfig.title,
+          questions,
+          theme: {
+            ...theme,
+            _config: {
+              instructions: surveyConfig.instructions,
+              requireName: surveyConfig.requireName,
+              conversational: surveyConfig.conversational,
+              timeLimit: surveyConfig.timeLimit,
+              startDate: surveyConfig.startDate,
+              endDate: surveyConfig.endDate,
+            },
+          },
+          score_ranges: surveyConfig.scoreRanges,
+        });
+        setSurveys(prev =>
+          prev.map(s => s.id === activeSurveyId ? { ...s, title: surveyConfig.title } : s)
+        );
+      } catch (err) {
+        console.error('Auto-save error:', err);
+      }
+    }, 1500);
+    return () => clearTimeout(autoSaveTimer.current);
+  }, [questions, surveyConfig, theme]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const navigate = tab => { setActiveTab(tab); setMenuOpen(false); };
+
+  const handleNewSurvey = async () => {
+    const config = {
+      title: 'Nueva Encuesta',
+      instructions: '',
+      requireName: false,
+      conversational: false,
+      timeLimit: false,
+      startDate: '',
+      endDate: '',
+      scoreRanges: [],
+    };
+    const newQs = [];
+    isMounted.current = false; // prevent auto-save on next render
+    setSurveyConfig(config);
+    setQuestions(newQs);
+    try {
+      const survey = await surveysApi.create({
+        userId: user.id,
+        title: config.title,
+        questions: newQs,
+        theme,
+        scoreRanges: [],
+      });
+      setActiveSurveyId(survey.id);
+      setSurveys(prev => [survey, ...prev]);
+    } catch (err) {
+      console.error('Error creating survey:', err);
+      setActiveSurveyId(null);
+    }
+    navigate('builder');
+  };
+
+  const handleEditSurvey = async (id) => {
+    try {
+      const survey = await surveysApi.get(id);
+      const { _config = {}, ...pureTheme } = survey.theme ?? {};
+      isMounted.current = false;
+      if (pureTheme.primary) setTheme(pureTheme);
+      setActiveSurveyId(survey.id);
+      setSurveyConfig({
+        title: survey.title,
+        instructions: _config.instructions ?? '',
+        requireName: _config.requireName ?? false,
+        conversational: _config.conversational ?? false,
+        timeLimit: _config.timeLimit ?? false,
+        startDate: _config.startDate ?? '',
+        endDate: _config.endDate ?? '',
+        scoreRanges: survey.score_ranges ?? [],
+      });
+      setQuestions(survey.questions ?? []);
+      navigate('builder');
+    } catch (err) {
+      console.error('Error loading survey:', err);
+    }
+  };
 
   const handleArchive = id => {
     const survey = surveys.find(s => s.id === id);
@@ -77,20 +177,80 @@ export default function App() {
     setSurveys(prev => [...prev, survey]);
   };
 
-  const handleNewSurvey = () => {
-    setSurveyConfig({ title: 'Nueva Encuesta', instructions: '', requireName: false, conversational: false, timeLimit: false, startDate: '', endDate: '' });
-    setQuestions([]);
-    navigate('builder');
+  const handleSaveToBank = async (question, title, tags) => {
+    const etiquetas =
+      typeof tags === 'string'
+        ? tags.split(',').map(t => t.trim()).filter(Boolean)
+        : tags ?? [];
+    try {
+      const item = await bankApi.save({
+        userId: user.id,
+        titulo: title || question.text.slice(0, 50) || 'Pregunta sin título',
+        tipo: question.type,
+        configuracion: { ...question, id: undefined, conditions: [], conditionMode: 'show' },
+        etiquetas,
+      });
+      setQuestionBank(prev => [item, ...prev]);
+    } catch (err) {
+      console.error('Error saving to bank:', err);
+    }
   };
 
+  const handleInsertFromBank = item => {
+    const newQ = {
+      ...item.configuracion,
+      id: Date.now() + Math.floor(Math.random() * 9999),
+      conditions: [],
+      conditionMode: 'show',
+    };
+    setQuestions(qs => [...qs, newQ]);
+  };
+
+  const handleDeleteFromBank = async id => {
+    try {
+      await bankApi.delete(id);
+      setQuestionBank(prev => prev.filter(b => b.id !== id));
+    } catch (err) {
+      console.error('Error deleting from bank:', err);
+    }
+  };
+
+  const dashboardSurveys = surveys.map(s => ({
+    id: s.id,
+    name: s.title,
+    responses: 0,
+    status: s.is_active ? 'Activa' : 'Borrador',
+    statusColor: s.is_active
+      ? 'bg-emerald-100 text-emerald-700'
+      : 'bg-slate-100 text-slate-600',
+  }));
+
+  const archivedDashboard = archivedSurveys.map(s => ({
+    id: s.id,
+    name: s.title ?? s.name ?? 'Encuesta',
+    responses: 0,
+    status: 'Archivada',
+    statusColor: 'bg-amber-100 text-amber-700',
+  }));
+
+  // --- Auth gates ---
+  if (authLoading) return <LoadingScreen />;
+  if (!user) return <LoginView />;
+
   if (isPreview) {
-    return <PreviewMode surveyConfig={surveyConfig} questions={questions} onClose={() => setIsPreview(false)} />;
+    return (
+      <PreviewMode
+        surveyConfig={surveyConfig}
+        questions={questions}
+        surveyId={activeSurveyId}
+        onClose={() => setIsPreview(false)}
+      />
+    );
   }
 
   return (
     <div className="min-h-screen bg-slate-50 flex font-sans text-slate-800">
 
-      {/* Backdrop móvil */}
       {menuOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 md:hidden"
@@ -113,10 +273,7 @@ export default function App() {
             <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center text-xs font-bold">D</div>
             DATAFORM
           </button>
-          <button
-            onClick={() => setMenuOpen(false)}
-            className="md:hidden text-slate-400 hover:text-white p-1 transition-colors"
-          >
+          <button onClick={() => setMenuOpen(false)} className="md:hidden text-slate-400 hover:text-white p-1 transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -188,7 +345,6 @@ export default function App() {
               </div>
             )}
 
-            {/* Score ranges */}
             <div className="border-t border-slate-700/60 pt-3 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Puntaje</span>
@@ -222,16 +378,35 @@ export default function App() {
             </div>
           </div>
         )}
+
+        {/* User profile + sign out */}
+        <div className="p-4 border-t border-slate-800 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden">
+            {user.user_metadata?.avatar_url
+              ? <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+              : (user.email?.[0] ?? '?').toUpperCase()
+            }
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-slate-200 truncate">
+              {user.user_metadata?.full_name ?? user.email}
+            </p>
+            <p className="text-xs text-slate-500 truncate">{user.email}</p>
+          </div>
+          <button
+            onClick={signOut}
+            title="Cerrar sesión"
+            className="text-slate-500 hover:text-red-400 transition-colors p-1 flex-shrink-0"
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
       </aside>
 
       {/* Main */}
       <main className="flex-1 h-screen flex flex-col overflow-hidden">
-        {/* Barra superior móvil */}
         <div className="md:hidden flex-shrink-0 bg-slate-900 px-4 py-3 flex items-center gap-3 border-b border-slate-800">
-          <button
-            onClick={() => setMenuOpen(true)}
-            className="text-slate-300 hover:text-white p-1 -ml-1 transition-colors"
-          >
+          <button onClick={() => setMenuOpen(true)} className="text-slate-300 hover:text-white p-1 -ml-1 transition-colors">
             <Menu size={20} />
           </button>
           <div className="flex items-center gap-2">
@@ -240,20 +415,21 @@ export default function App() {
           </div>
         </div>
 
-        {/* Área de contenido con scroll propio */}
         <div className="flex-1 overflow-y-auto flex flex-col">
           <div className="flex-1 p-4 md:p-8">
             {activeTab === 'dashboard' && (
               <DashboardView
-                surveys={surveys}
+                surveys={dashboardSurveys}
+                loading={loadingSurveys}
                 onViewAnalytics={() => navigate('analytics')}
                 onNewSurvey={handleNewSurvey}
                 onArchive={handleArchive}
+                onEdit={handleEditSurvey}
               />
             )}
             {activeTab === 'archive' && (
               <ArchiveView
-                surveys={archivedSurveys}
+                surveys={archivedDashboard}
                 onUnarchive={handleUnarchive}
                 onViewAnalytics={() => navigate('analytics')}
               />
@@ -271,7 +447,14 @@ export default function App() {
                 onDeleteFromBank={handleDeleteFromBank}
               />
             )}
-            {activeTab === 'analytics'  && <AnalyticsView questions={questions} surveyConfig={surveyConfig} theme={theme} />}
+            {activeTab === 'analytics'  && (
+              <AnalyticsView
+                questions={questions}
+                surveyConfig={surveyConfig}
+                theme={theme}
+                surveyId={activeSurveyId}
+              />
+            )}
             {activeTab === 'appearance' && <AppearanceView theme={theme} setTheme={setTheme} />}
           </div>
           <footer className="px-4 md:px-8 py-4 border-t border-slate-200 bg-white text-center text-xs text-slate-400 flex-shrink-0">
@@ -279,6 +462,17 @@ export default function App() {
           </footer>
         </div>
       </main>
+    </div>
+  );
+}
+
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-10 h-10 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-slate-400 text-sm">Cargando...</p>
+      </div>
     </div>
   );
 }

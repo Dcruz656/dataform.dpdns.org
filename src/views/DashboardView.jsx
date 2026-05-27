@@ -1,6 +1,6 @@
-import { PenTool, BarChart3, Archive } from 'lucide-react';
+import { PenTool, BarChart3, Archive, Pencil } from 'lucide-react';
 
-export default function DashboardView({ surveys = [], onViewAnalytics, onNewSurvey, onArchive }) {
+export default function DashboardView({ surveys = [], loading = false, onViewAnalytics, onNewSurvey, onArchive, onEdit }) {
   const active = surveys.filter(s => s.status === 'Activa').length;
   const drafts  = surveys.filter(s => s.status === 'Borrador').length;
   const total   = surveys.reduce((sum, s) => sum + s.responses, 0);
@@ -26,9 +26,11 @@ export default function DashboardView({ surveys = [], onViewAnalytics, onNewSurv
           <h2 className="font-bold text-slate-800">Encuestas Recientes</h2>
           <span className="text-xs text-slate-400">{surveys.length} encuestas</span>
         </div>
-        {surveys.length === 0 ? (
+        {loading ? (
+          <div className="py-12 text-center text-slate-400 text-sm">Cargando encuestas...</div>
+        ) : surveys.length === 0 ? (
           <div className="py-12 text-center text-slate-400 text-sm">
-            No hay encuestas activas. <button onClick={onNewSurvey} className="text-blue-600 hover:underline font-medium">Crear una nueva</button>
+            No hay encuestas. <button onClick={onNewSurvey} className="text-blue-600 hover:underline font-medium">Crear una nueva</button>
           </div>
         ) : (
           surveys.map(s => (
@@ -36,7 +38,6 @@ export default function DashboardView({ surveys = [], onViewAnalytics, onNewSurv
               key={s.id}
               className="flex items-center px-5 py-4 border-b border-slate-50 last:border-0 hover:bg-blue-50 transition-colors group"
             >
-              {/* Área clickeable que incluye nombre, status e ícono de analítica */}
               <button onClick={onViewAnalytics} className="flex-1 flex items-center justify-between gap-3 text-left min-w-0">
                 <div className="min-w-0">
                   <p className="font-medium text-slate-800 group-hover:text-blue-700 transition-colors truncate">{s.name}</p>
@@ -46,6 +47,13 @@ export default function DashboardView({ surveys = [], onViewAnalytics, onNewSurv
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${s.statusColor}`}>{s.status}</span>
                   <BarChart3 size={15} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
                 </div>
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); onEdit?.(s.id); }}
+                title="Editar encuesta"
+                className="ml-2 p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors sm:opacity-0 sm:group-hover:opacity-100"
+              >
+                <Pencil size={15} />
               </button>
               <button
                 onClick={e => { e.stopPropagation(); onArchive(s.id); }}

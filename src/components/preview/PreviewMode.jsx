@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Eye, Check, Star, ChevronRight, ChevronLeft, Upload, Award } from 'lucide-react';
 import { shouldShowQuestion } from '../../utils';
+import { responsesApi } from '../../lib/db';
 
 /* ─── Piping: replace {{P1}}, {{nombre}}, etc. with actual answers ─── */
 function applyPiping(text, answers, questions, name) {
@@ -38,18 +39,34 @@ function calculateScore(questions, answers) {
   }, 0);
 }
 
-export default function PreviewMode({ surveyConfig, questions, onClose }) {
+export default function PreviewMode({ surveyConfig, questions, surveyId, onClose }) {
   const [answers, setAnswers] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [finalScore, setFinalScore] = useState(null);
 
   const setAnswer = (id, val) => setAnswers(prev => ({ ...prev, [id]: val }));
 
-  const handleSubmit = () => {
-    if (surveyConfig?.scoreRanges?.length > 0) {
-      setFinalScore(calculateScore(questions, answers));
-    }
+  const handleSubmit = async ({ timings = [], respondentName = null } = {}) => {
+    const score = surveyConfig?.scoreRanges?.length > 0 ? calculateScore(questions, answers) : null;
+    setFinalScore(score);
     setSubmitted(true);
+    if (surveyId) {
+      const scoreRange = score !== null
+        ? (surveyConfig.scoreRanges || []).find(r => score >= Number(r.min) && score <= Number(r.max))
+        : null;
+      try {
+        await responsesApi.submit({
+          surveyId,
+          respondentName: respondentName || null,
+          answers,
+          timings: Array.isArray(timings) ? timings : Object.entries(timings).map(([qId, t]) => ({ question_id: qId, ...t })),
+          score,
+          scoreRangeTitle: scoreRange?.title ?? null,
+        });
+      } catch (err) {
+        console.error('Error submitting response:', err);
+      }
+    }
   };
 
   if (submitted) {
@@ -172,7 +189,7 @@ function ClassicView({ surveyConfig, questions, answers, setAnswer, onSubmit }) 
           </div>
 
           <button
-            onClick={onSubmit}
+            onClick={() => onSubmit({ timings: [], respondentName: name })}
             className="mt-12 px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm"
           >
             Enviar Respuestas
@@ -223,7 +240,7 @@ function ConversationalView({ surveyConfig, questions, answers, setAnswer, onSub
     }
     setLocalAnswer(null);
     entryTimeRef.current = Date.now();
-    if (isLast && !isNameScreen) { onSubmit(); return; }
+    if (isLast && !isNameScreen) { onSubmit({ timings, respondentName: name }); return; }
     setCurrentIdx(i => i + 1);
   };
 
@@ -240,7 +257,7 @@ function ConversationalView({ surveyConfig, questions, answers, setAnswer, onSub
     }
     setLocalAnswer(null);
     entryTimeRef.current = Date.now();
-    if (isLast && !isNameScreen) { onSubmit(); return; }
+    if (isLast && !isNameScreen) { onSubmit({ timings, respondentName: name }); return; }
     setCurrentIdx(i => i + 1);
   };
 
