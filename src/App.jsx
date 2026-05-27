@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, PenTool, BarChart3, Palette, Archive, Menu, X, LogOut } from 'lucide-react';
+import { LayoutDashboard, PenTool, BarChart3, Palette, Archive, Menu, X, LogOut, ClipboardList } from 'lucide-react';
 import { DEFAULT_QUESTIONS } from './constants';
 import NavItem from './components/NavItem';
 import BuilderView from './components/builder/BuilderView';
@@ -8,6 +8,7 @@ import DashboardView from './views/DashboardView';
 import AnalyticsView from './views/AnalyticsView';
 import AppearanceView from './views/AppearanceView';
 import ArchiveView from './views/ArchiveView';
+import MySurveysView from './views/MySurveysView';
 import LoginView from './views/LoginView';
 import { useAuth } from './contexts/AuthContext';
 import { surveysApi, bankApi } from './lib/db';
@@ -170,6 +171,15 @@ export default function App() {
     setArchivedSurveys(prev => [survey, ...prev]);
   };
 
+  const handleDeleteSurvey = async id => {
+    try {
+      await surveysApi.delete(id);
+      setSurveys(prev => prev.filter(s => s.id !== id));
+    } catch (err) {
+      console.error('Error deleting survey:', err);
+    }
+  };
+
   const handleUnarchive = id => {
     const survey = archivedSurveys.find(s => s.id === id);
     if (!survey) return;
@@ -215,15 +225,20 @@ export default function App() {
     }
   };
 
-  const dashboardSurveys = surveys.map(s => ({
+  const mapSurvey = s => ({
     id: s.id,
-    name: s.title,
+    name: s.title ?? s.name ?? 'Encuesta',
     responses: 0,
     status: s.is_active ? 'Activa' : 'Borrador',
     statusColor: s.is_active
       ? 'bg-emerald-100 text-emerald-700'
       : 'bg-slate-100 text-slate-600',
-  }));
+    createdAt: s.created_at,
+    updatedAt: s.updated_at,
+  });
+
+  const dashboardSurveys = surveys.map(mapSurvey);
+  const mySurveysData    = surveys.map(mapSurvey);
 
   const archivedDashboard = archivedSurveys.map(s => ({
     id: s.id,
@@ -231,6 +246,8 @@ export default function App() {
     responses: 0,
     status: 'Archivada',
     statusColor: 'bg-amber-100 text-amber-700',
+    createdAt: s.created_at,
+    updatedAt: s.updated_at,
   }));
 
   // --- Auth gates ---
@@ -279,10 +296,11 @@ export default function App() {
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          <NavItem icon={<LayoutDashboard size={18} />} label="Dashboard"   active={activeTab === 'dashboard'}  onClick={() => navigate('dashboard')} />
-          <NavItem icon={<PenTool size={18} />}         label="Constructor" active={activeTab === 'builder'}    onClick={() => navigate('builder')} />
-          <NavItem icon={<BarChart3 size={18} />}        label="Analítica"   active={activeTab === 'analytics'}  onClick={() => navigate('analytics')} />
-          <NavItem icon={<Palette size={18} />}          label="Apariencia"  active={activeTab === 'appearance'} onClick={() => navigate('appearance')} />
+          <NavItem icon={<LayoutDashboard size={18} />} label="Dashboard"      active={activeTab === 'dashboard'}   onClick={() => navigate('dashboard')} />
+          <NavItem icon={<ClipboardList size={18} />}    label="Mis Encuestas"  active={activeTab === 'mysurveys'}   onClick={() => navigate('mysurveys')} />
+          <NavItem icon={<PenTool size={18} />}          label="Constructor"    active={activeTab === 'builder'}     onClick={() => navigate('builder')} />
+          <NavItem icon={<BarChart3 size={18} />}        label="Analítica"      active={activeTab === 'analytics'}   onClick={() => navigate('analytics')} />
+          <NavItem icon={<Palette size={18} />}          label="Apariencia"     active={activeTab === 'appearance'}  onClick={() => navigate('appearance')} />
           <NavItem
             icon={<Archive size={18} />}
             label={
@@ -425,6 +443,17 @@ export default function App() {
                 onNewSurvey={handleNewSurvey}
                 onArchive={handleArchive}
                 onEdit={handleEditSurvey}
+              />
+            )}
+            {activeTab === 'mysurveys' && (
+              <MySurveysView
+                surveys={mySurveysData}
+                loading={loadingSurveys}
+                onNewSurvey={handleNewSurvey}
+                onEdit={handleEditSurvey}
+                onArchive={handleArchive}
+                onDelete={handleDeleteSurvey}
+                onViewAnalytics={() => navigate('analytics')}
               />
             )}
             {activeTab === 'archive' && (
