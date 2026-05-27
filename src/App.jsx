@@ -474,6 +474,7 @@ export default function App() {
                 onSaveToBank={handleSaveToBank}
                 onInsertFromBank={handleInsertFromBank}
                 onDeleteFromBank={handleDeleteFromBank}
+                activeSurveyId={activeSurveyId}
               />
             )}
             {activeTab === 'analytics'  && (

@@ -28,7 +28,7 @@ function SortableItem({ question, ...props }) {
 
 export default function BuilderView({
   surveyConfig, setSurveyConfig, questions, setQuestions, onPreview,
-  questionBank, onSaveToBank, onInsertFromBank, onDeleteFromBank,
+  questionBank, onSaveToBank, onInsertFromBank, onDeleteFromBank, activeSurveyId,
 }) {
   const [view, setView] = useState('list');
   const [showTypeSelector, setShowTypeSelector] = useState(false);
@@ -125,7 +125,7 @@ export default function BuilderView({
       </div>
 
       {showPublish && (
-        <PublishModal surveyConfig={surveyConfig} onClose={() => setShowPublish(false)} />
+        <PublishModal surveyConfig={surveyConfig} surveyId={activeSurveyId} onClose={() => setShowPublish(false)} />
       )}
 
       {view === 'list' ? (
