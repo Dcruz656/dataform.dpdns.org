@@ -57,29 +57,24 @@ export default function PreviewMode({ surveyConfig, questions, surveyId, onClose
       const scoreRange = score !== null
         ? (surveyConfig.scoreRanges || []).find(r => score >= Number(r.min) && score <= Number(r.max))
         : null;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 7000);
       try {
-        console.log('[submit] starting insert for survey', surveyId);
-        await responsesApi.submit({
-          surveyId,
-          respondentName: respondentName || null,
-          answers,
-          timings: Array.isArray(timings) ? timings : Object.entries(timings).map(([qId, t]) => ({ question_id: qId, ...t })),
-          score,
-          scoreRangeTitle: scoreRange?.title ?? null,
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-        console.log('[submit] success');
+        await Promise.race([
+          responsesApi.submit({
+            surveyId,
+            respondentName: respondentName || null,
+            answers,
+            timings: Array.isArray(timings) ? timings : Object.entries(timings).map(([qId, t]) => ({ question_id: qId, ...t })),
+            score,
+            scoreRangeTitle: scoreRange?.title ?? null,
+          }),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Tiempo de espera agotado (8s). Verifica tu conexión.')), 8000)
+          ),
+        ]);
         setSubmitted(true);
       } catch (err) {
-        clearTimeout(timeoutId);
         console.error('[submit] error:', err);
-        const isTimeout = err?.name === 'AbortError' || err?.message?.includes('aborted');
-        const msg = isTimeout
-          ? 'Tiempo de espera agotado (7s). Verifica tu conexión a internet.'
-          : (err?.message || err?.code || JSON.stringify(err));
+        const msg = err?.message || err?.code || JSON.stringify(err);
         setSubmitError(msg);
         setSubmitting(false);
       }
