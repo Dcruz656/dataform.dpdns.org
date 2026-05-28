@@ -96,12 +96,12 @@ export default function PublicSurveyView({ surveyId }) {
     );
   }
 
-  const { _config = {} } = survey.theme ?? {};
+  // Raw DB row — individual columns, not theme._config
   const surveyConfig = {
-    title: survey.title,
-    instructions: _config.instructions ?? '',
-    requireName: _config.requireName ?? false,
-    conversational: _config.conversational ?? false,
+    title: survey.title ?? survey.name,
+    instructions: survey.instructions ?? '',
+    requireName: survey.require_name ?? false,
+    conversational: survey.conversational ?? false,
     scoreRanges: survey.score_ranges ?? [],
   };
 
