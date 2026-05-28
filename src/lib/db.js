@@ -127,7 +127,7 @@ export const responsesApi = {
   },
 
   async submit({ surveyId, respondentName, answers, timings, score, scoreRangeTitle }) {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('responses')
       .insert({
         survey_id:         surveyId,
@@ -136,11 +136,8 @@ export const responsesApi = {
         timings:           timings          ?? [],
         score:             score            ?? null,
         score_range_title: scoreRangeTitle  ?? null,
-      })
-      .select()
-      .single();
+      });
     if (error) throw error;
-    return data;
   },
 };
 
