@@ -41,7 +41,9 @@ function calculateScore(questions, answers) {
 
 export default function PreviewMode({ surveyConfig, questions, surveyId, onClose, publicMode = false }) {
   const [answers, setAnswers] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
   const [finalScore, setFinalScore] = useState(null);
 
   const setAnswer = (id, val) => setAnswers(prev => ({ ...prev, [id]: val }));
@@ -49,8 +51,9 @@ export default function PreviewMode({ surveyConfig, questions, surveyId, onClose
   const handleSubmit = async ({ timings = [], respondentName = null } = {}) => {
     const score = surveyConfig?.scoreRanges?.length > 0 ? calculateScore(questions, answers) : null;
     setFinalScore(score);
-    setSubmitted(true);
+
     if (surveyId) {
+      setSubmitting(true);
       const scoreRange = score !== null
         ? (surveyConfig.scoreRanges || []).find(r => score >= Number(r.min) && score <= Number(r.max))
         : null;
@@ -63,11 +66,47 @@ export default function PreviewMode({ surveyConfig, questions, surveyId, onClose
           score,
           scoreRangeTitle: scoreRange?.title ?? null,
         });
+        setSubmitted(true);
       } catch (err) {
         console.error('Error submitting response:', err);
+        const msg = err?.message || err?.code || JSON.stringify(err);
+        setSubmitError(msg);
+        setSubmitting(false);
       }
+    } else {
+      setSubmitted(true);
     }
   };
+
+  if (submitting) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-500 text-sm">Guardando respuesta...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (submitError) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans p-6">
+        <div className="text-center max-w-md">
+          <p className="text-4xl mb-4">⚠️</p>
+          <h1 className="text-xl font-bold text-slate-900 mb-2">No se pudo guardar la respuesta</h1>
+          <p className="text-slate-500 text-sm mb-4">Ocurrió un error al registrar tus datos. Por favor intenta de nuevo.</p>
+          <p className="text-xs text-red-500 font-mono bg-red-50 border border-red-200 rounded p-3 mb-6 text-left break-all">{submitError}</p>
+          <button
+            onClick={() => setSubmitError(null)}
+            className="px-6 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            Intentar de nuevo
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (submitted) {
     if (surveyConfig?.scoreRanges?.length > 0 && finalScore !== null) {
