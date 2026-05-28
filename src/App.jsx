@@ -276,7 +276,7 @@ export default function App() {
   const mapSurvey = s => ({
     id: s.id,
     name: s.title ?? s.name ?? 'Encuesta',
-    responses: 0,
+    responses: s.responseCount ?? 0,
     status: s.is_active ? 'Activa' : 'Borrador',
     statusColor: s.is_active
       ? 'bg-emerald-100 text-emerald-700'

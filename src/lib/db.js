@@ -45,11 +45,14 @@ export const surveysApi = {
   async list(userId) {
     const { data, error } = await supabase
       .from('surveys')
-      .select('id, name, title, is_active, status, created_at, updated_at')
+      .select('id, name, title, is_active, status, created_at, updated_at, responses(count)')
       .eq('user_id', userId)
       .order('updated_at', { ascending: false });
     if (error) throw error;
-    return (data ?? []).map(toApp);
+    return (data ?? []).map(row => ({
+      ...toApp(row),
+      responseCount: row.responses?.[0]?.count ?? 0,
+    }));
   },
 
   async get(id) {
