@@ -529,7 +529,7 @@ export default function App() {
             )}
             {activeTab === 'analytics'  && (
               <AnalyticsView
-                surveys={surveys}
+                surveys={mySurveysData}
                 initialSurveyId={activeSurveyId}
               />
             )}
