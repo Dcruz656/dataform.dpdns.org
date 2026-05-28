@@ -58,14 +58,20 @@ export default function PreviewMode({ surveyConfig, questions, surveyId, onClose
         ? (surveyConfig.scoreRanges || []).find(r => score >= Number(r.min) && score <= Number(r.max))
         : null;
       try {
-        await responsesApi.submit({
-          surveyId,
-          respondentName: respondentName || null,
-          answers,
-          timings: Array.isArray(timings) ? timings : Object.entries(timings).map(([qId, t]) => ({ question_id: qId, ...t })),
-          score,
-          scoreRangeTitle: scoreRange?.title ?? null,
-        });
+        const timeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Tiempo de espera agotado. Verifica tu conexión a internet.')), 12000)
+        );
+        await Promise.race([
+          responsesApi.submit({
+            surveyId,
+            respondentName: respondentName || null,
+            answers,
+            timings: Array.isArray(timings) ? timings : Object.entries(timings).map(([qId, t]) => ({ question_id: qId, ...t })),
+            score,
+            scoreRangeTitle: scoreRange?.title ?? null,
+          }),
+          timeout,
+        ]);
         setSubmitted(true);
       } catch (err) {
         console.error('Error submitting response:', err);
