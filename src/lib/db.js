@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase';
 
 // Convert a DB row to the shape the app expects.
 // Individual DB columns → theme._config so App.jsx doesn't need changes.
@@ -126,18 +126,31 @@ export const responsesApi = {
     return data;
   },
 
-  async submit({ surveyId, respondentName, answers, timings, score, scoreRangeTitle }) {
-    const { error } = await supabase
-      .from('responses')
-      .insert({
+  async submit({ surveyId, respondentName, answers, timings, score, scoreRangeTitle, signal }) {
+    // Raw fetch with Prefer:return=minimal avoids a SELECT after INSERT
+    // (which would require an additional RLS policy for anon users).
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/responses`, {
+      method: 'POST',
+      signal: signal ?? undefined,
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
         survey_id:         surveyId,
         respondent_name:   respondentName   ?? null,
-        answers,
-        timings:           timings          ?? [],
+        answers:           answers          ?? {},
+        timings:           Array.isArray(timings) ? timings : [],
         score:             score            ?? null,
         score_range_title: scoreRangeTitle  ?? null,
-      });
-    if (error) throw error;
+      }),
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.message || body.hint || `HTTP ${res.status}`);
+    }
   },
 };
 
