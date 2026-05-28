@@ -28,7 +28,7 @@ function SortableItem({ question, ...props }) {
 
 export default function BuilderView({
   surveyConfig, setSurveyConfig, questions, setQuestions, onPreview,
-  questionBank, onSaveToBank, onInsertFromBank, onDeleteFromBank, activeSurveyId,
+  questionBank, onSaveToBank, onInsertFromBank, onDeleteFromBank, activeSurveyId, saveStatus,
 }) {
   const [view, setView] = useState('list');
   const [showTypeSelector, setShowTypeSelector] = useState(false);
@@ -87,7 +87,17 @@ export default function BuilderView({
       <div className="flex flex-wrap justify-between items-center gap-3 bg-white p-3 md:p-4 rounded-lg border border-slate-200 shadow-sm sticky top-0 z-10">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Editor de Encuesta</h1>
-          <p className="text-xs text-slate-500">Guardado automáticamente</p>
+          <p className={`text-xs font-medium ${
+            saveStatus === 'saving' ? 'text-blue-500' :
+            saveStatus === 'saved'  ? 'text-emerald-600' :
+            saveStatus === 'error'  ? 'text-red-500' :
+            'text-slate-400'
+          }`}>
+            {saveStatus === 'saving' ? '● Guardando...' :
+             saveStatus === 'saved'  ? '✓ Guardado' :
+             saveStatus === 'error'  ? '✗ Error al guardar' :
+             'Guardado automáticamente'}
+          </p>
         </div>
         <div className="flex gap-2 items-center flex-wrap">
           <div className="bg-slate-100 p-1 rounded-md flex border border-slate-200 mr-2">

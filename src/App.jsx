@@ -39,8 +39,11 @@ export default function App() {
   const [questionBank, setQuestionBank] = useState([]);
   const [loadingSurveys, setLoadingSurveys] = useState(false);
 
+  const [saveStatus, setSaveStatus] = useState('idle'); // idle | saving | saved | error
   const autoSaveTimer = useRef(null);
   const isMounted = useRef(false);
+  const activeSurveyIdRef = useRef(null);
+  useEffect(() => { activeSurveyIdRef.current = activeSurveyId; }, [activeSurveyId]);
 
   useEffect(() => {
     if (!user) {
@@ -74,33 +77,55 @@ export default function App() {
   };
 
   // Auto-save when builder content changes (debounced 1500ms)
+  // Uses activeSurveyIdRef to avoid stale closures.
+  // Creates the survey in DB if it doesn't exist yet.
   useEffect(() => {
     if (!isMounted.current) { isMounted.current = true; return; }
-    if (!activeSurveyId || !user) return;
+    if (!user) return;
     clearTimeout(autoSaveTimer.current);
+    setSaveStatus('saving');
     autoSaveTimer.current = setTimeout(async () => {
+      const themePayload = {
+        ...theme,
+        _config: {
+          instructions: surveyConfig.instructions,
+          requireName: surveyConfig.requireName,
+          conversational: surveyConfig.conversational,
+          timeLimit: surveyConfig.timeLimit,
+          startDate: surveyConfig.startDate,
+          endDate: surveyConfig.endDate,
+        },
+      };
       try {
-        await surveysApi.update(activeSurveyId, {
-          title: surveyConfig.title,
-          questions,
-          theme: {
-            ...theme,
-            _config: {
-              instructions: surveyConfig.instructions,
-              requireName: surveyConfig.requireName,
-              conversational: surveyConfig.conversational,
-              timeLimit: surveyConfig.timeLimit,
-              startDate: surveyConfig.startDate,
-              endDate: surveyConfig.endDate,
-            },
-          },
-          score_ranges: surveyConfig.scoreRanges,
-        });
-        setSurveys(prev =>
-          prev.map(s => s.id === activeSurveyId ? { ...s, title: surveyConfig.title } : s)
-        );
+        const currentId = activeSurveyIdRef.current;
+        if (currentId) {
+          await surveysApi.update(currentId, {
+            title: surveyConfig.title,
+            questions,
+            theme: themePayload,
+            score_ranges: surveyConfig.scoreRanges,
+          });
+          setSurveys(prev =>
+            prev.map(s => s.id === currentId ? { ...s, title: surveyConfig.title } : s)
+          );
+        } else {
+          // No survey yet — create on first save
+          const survey = await surveysApi.create({
+            userId: user.id,
+            title: surveyConfig.title,
+            questions,
+            theme: themePayload,
+            scoreRanges: surveyConfig.scoreRanges,
+          });
+          activeSurveyIdRef.current = survey.id;
+          setActiveSurveyId(survey.id);
+          setSurveys(prev => [survey, ...prev]);
+        }
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('idle'), 2000);
       } catch (err) {
         console.error('Auto-save error:', err);
+        setSaveStatus('error');
       }
     }, 1500);
     return () => clearTimeout(autoSaveTimer.current);
@@ -108,8 +133,11 @@ export default function App() {
 
   const navigate = tab => { setActiveTab(tab); setMenuOpen(false); };
 
-  const handleNewSurvey = async () => {
-    const config = {
+  const handleNewSurvey = () => {
+    isMounted.current = false; // skip auto-save on this render cycle
+    activeSurveyIdRef.current = null;
+    setActiveSurveyId(null);
+    setSurveyConfig({
       title: 'Nueva Encuesta',
       instructions: '',
       requireName: false,
@@ -118,26 +146,11 @@ export default function App() {
       startDate: '',
       endDate: '',
       scoreRanges: [],
-    };
-    const newQs = DEFAULT_QUESTIONS;
-    isMounted.current = false; // prevent auto-save on next render
-    setSurveyConfig(config);
-    setQuestions(newQs);
-    try {
-      const survey = await surveysApi.create({
-        userId: user.id,
-        title: config.title,
-        questions: newQs,
-        theme,
-        scoreRanges: [],
-      });
-      setActiveSurveyId(survey.id);
-      setSurveys(prev => [survey, ...prev]);
-    } catch (err) {
-      console.error('Error creating survey:', err);
-      setActiveSurveyId(null);
-    }
+    });
+    setQuestions(DEFAULT_QUESTIONS);
+    setSaveStatus('idle');
     navigate('builder');
+    // Survey is created in DB automatically by auto-save on first change
   };
 
   const handleEditSurvey = async (id) => {
@@ -475,6 +488,7 @@ export default function App() {
                 onInsertFromBank={handleInsertFromBank}
                 onDeleteFromBank={handleDeleteFromBank}
                 activeSurveyId={activeSurveyId}
+                saveStatus={saveStatus}
               />
             )}
             {activeTab === 'analytics'  && (
