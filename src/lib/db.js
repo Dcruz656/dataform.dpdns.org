@@ -1,14 +1,17 @@
 import { supabase } from './supabase';
 
+// Helper: DB rows use "name", app code uses "title"
+const toApp = row => row ? { ...row, title: row.name ?? row.title } : row;
+
 export const surveysApi = {
   async list(userId) {
     const { data, error } = await supabase
       .from('surveys')
-      .select('id, title, created_at, updated_at, is_active')
+      .select('id, name, created_at, updated_at, is_active')
       .eq('user_id', userId)
       .order('updated_at', { ascending: false });
     if (error) throw error;
-    return data;
+    return (data ?? []).map(toApp);
   },
 
   async get(id) {
@@ -18,7 +21,7 @@ export const surveysApi = {
       .eq('id', id)
       .single();
     if (error) throw error;
-    return data;
+    return toApp(data);
   },
 
   async create({ userId, title, questions, theme, scoreRanges }) {
@@ -26,7 +29,7 @@ export const surveysApi = {
       .from('surveys')
       .insert({
         user_id: userId,
-        title,
+        name: title,          // DB column is "name"
         questions,
         theme,
         score_ranges: scoreRanges ?? [],
@@ -35,18 +38,23 @@ export const surveysApi = {
       .select()
       .single();
     if (error) throw error;
-    return data;
+    return toApp(data);
   },
 
   async update(id, patch) {
+    // Convert "title" key → "name" for the DB
+    const { title, ...rest } = patch;
+    const dbPatch = { ...rest, updated_at: new Date().toISOString() };
+    if (title !== undefined) dbPatch.name = title;
+
     const { data, error } = await supabase
       .from('surveys')
-      .update({ ...patch, updated_at: new Date().toISOString() })
+      .update(dbPatch)
       .eq('id', id)
       .select()
       .single();
     if (error) throw error;
-    return data;
+    return toApp(data);
   },
 
   async delete(id) {
