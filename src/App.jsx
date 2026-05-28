@@ -119,7 +119,7 @@ export default function App() {
       endDate: '',
       scoreRanges: [],
     };
-    const newQs = [];
+    const newQs = DEFAULT_QUESTIONS;
     isMounted.current = false; // prevent auto-save on next render
     setSurveyConfig(config);
     setQuestions(newQs);
