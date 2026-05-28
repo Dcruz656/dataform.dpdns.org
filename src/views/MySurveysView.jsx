@@ -2,7 +2,9 @@ import { useState, useMemo } from 'react';
 import {
   PenTool, Search, Archive, Pencil, BarChart3, Trash2,
   FileText, CheckCircle, Clock, Filter, SortDesc, Plus,
+  QrCode, X, Copy, Check, Download, ExternalLink, Link,
 } from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -35,6 +37,7 @@ export default function MySurveysView({
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('updated'); // 'updated' | 'name' | 'responses'
+  const [linkSurvey, setLinkSurvey] = useState(null);
 
   const filtered = useMemo(() => {
     let list = [...surveys];
@@ -64,6 +67,7 @@ export default function MySurveysView({
 
   return (
     <div className="space-y-6 max-w-5xl">
+      {linkSurvey && <LinkModal survey={linkSurvey} onClose={() => setLinkSurvey(null)} />}
 
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -160,6 +164,7 @@ export default function MySurveysView({
                 onArchive={onArchive}
                 onDelete={onDelete}
                 onViewAnalytics={onViewAnalytics}
+                onShowLink={setLinkSurvey}
               />
             ))}
           </ul>
@@ -198,7 +203,7 @@ function SummaryPill({ icon, label, value, color }) {
   );
 }
 
-function SurveyRow({ survey: s, onEdit, onArchive, onDelete, onViewAnalytics }) {
+function SurveyRow({ survey: s, onEdit, onArchive, onDelete, onViewAnalytics, onShowLink }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
@@ -236,6 +241,17 @@ function SurveyRow({ survey: s, onEdit, onArchive, onDelete, onViewAnalytics }) 
 
       {/* Actions */}
       <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity justify-end">
+        {/* QR / Link */}
+        {s.status === 'Activa' && (
+          <ActionBtn
+            title="Ver enlace y QR"
+            onClick={() => onShowLink?.(s)}
+            colorClass="hover:text-green-600 hover:bg-green-50"
+          >
+            <QrCode size={15} />
+          </ActionBtn>
+        )}
+
         {/* Analytics */}
         <ActionBtn
           title="Ver analítica"
@@ -317,6 +333,101 @@ function LoadingRows() {
           <div className="h-6 w-16 bg-slate-100 rounded-full" />
         </div>
       ))}
+    </div>
+  );
+}
+
+function LinkModal({ survey, onClose }) {
+  const [copied, setCopied] = useState(false);
+  const url = `https://dataform.dpdns.org/s/${survey.id}`;
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const downloadQR = () => {
+    const canvas = document.getElementById('ms-qr-canvas');
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = `qr-${survey.name.toLowerCase().replace(/\s+/g, '-')}.png`;
+    a.click();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        {/* Header */}
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+          <div>
+            <h2 className="font-bold text-slate-900">Enlace y código QR</h2>
+            <p className="text-slate-500 text-sm truncate max-w-[260px]">{survey.name}</p>
+          </div>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 space-y-5">
+          {/* QR */}
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Código QR</p>
+            <div className="flex justify-center p-6 bg-slate-50 rounded-xl border border-slate-200">
+              <QRCodeCanvas
+                id="ms-qr-canvas"
+                value={url}
+                size={180}
+                bgColor="#f8fafc"
+                fgColor="#0f172a"
+                level="M"
+              />
+            </div>
+          </div>
+
+          {/* URL */}
+          <div>
+            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Enlace directo</p>
+            <div className="flex gap-2">
+              <div className="flex-1 flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 min-w-0">
+                <Link size={13} className="text-slate-400 flex-shrink-0" />
+                <span className="text-sm text-slate-700 truncate font-mono">{url}</span>
+              </div>
+              <button
+                onClick={copy}
+                className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all flex-shrink-0 ${
+                  copied ? 'bg-green-600 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                {copied ? <Check size={14} /> : <Copy size={14} />}
+                {copied ? '¡Copiado!' : 'Copiar'}
+              </button>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-2 pt-1">
+            <button
+              onClick={downloadQR}
+              className="w-full py-2.5 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+            >
+              <Download size={15} /> Descargar QR (.png)
+            </button>
+            <a
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full py-2.5 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+            >
+              <ExternalLink size={15} /> Abrir enlace
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
