@@ -73,9 +73,9 @@ export default function PublishModal({ surveyConfig, surveyId, onClose, onEnsure
         </div>
 
         <div className="p-6 space-y-5">
-          {!surveyId ? (
+          {!resolvedId ? (
             <div className="py-6 text-center text-slate-500 text-sm">
-              Guarda la encuesta antes de publicarla.
+              {activating ? 'Guardando encuesta...' : 'No se pudo guardar la encuesta.'}
             </div>
           ) : (
             <>
