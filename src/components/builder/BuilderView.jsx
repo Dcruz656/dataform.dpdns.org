@@ -87,15 +87,15 @@ export default function BuilderView({
       <div className="flex flex-wrap justify-between items-center gap-3 bg-white p-3 md:p-4 rounded-lg border border-slate-200 shadow-sm sticky top-0 z-10">
         <div>
           <h1 className="text-xl font-bold text-slate-900">Editor de Encuesta</h1>
-          <p className={`text-xs font-medium ${
-            saveStatus === 'saving' ? 'text-blue-500' :
-            saveStatus === 'saved'  ? 'text-emerald-600' :
-            saveStatus === 'error'  ? 'text-red-500' :
+          <p className={`text-xs font-medium max-w-xs truncate ${
+            saveStatus === 'saving'        ? 'text-blue-500' :
+            saveStatus === 'saved'         ? 'text-emerald-600' :
+            saveStatus?.startsWith('error')? 'text-red-500' :
             'text-slate-400'
           }`}>
-            {saveStatus === 'saving' ? '● Guardando...' :
-             saveStatus === 'saved'  ? '✓ Guardado' :
-             saveStatus === 'error'  ? '✗ Error al guardar' :
+            {saveStatus === 'saving'         ? '● Guardando...' :
+             saveStatus === 'saved'          ? '✓ Guardado' :
+             saveStatus?.startsWith('error') ? `✗ ${saveStatus.slice(6) || 'Error al guardar'}` :
              'Guardado automáticamente'}
           </p>
         </div>

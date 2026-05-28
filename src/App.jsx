@@ -125,7 +125,7 @@ export default function App() {
         setTimeout(() => setSaveStatus('idle'), 2000);
       } catch (err) {
         console.error('Auto-save error:', err);
-        setSaveStatus('error');
+        setSaveStatus('error:' + (err?.message || err?.code || JSON.stringify(err)));
       }
     }, 1500);
     return () => clearTimeout(autoSaveTimer.current);
