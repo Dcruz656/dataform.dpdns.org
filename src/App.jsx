@@ -529,10 +529,8 @@ export default function App() {
             )}
             {activeTab === 'analytics'  && (
               <AnalyticsView
-                questions={questions}
-                surveyConfig={surveyConfig}
-                theme={theme}
-                surveyId={activeSurveyId}
+                surveys={surveys}
+                initialSurveyId={activeSurveyId}
               />
             )}
             {activeTab === 'appearance' && <AppearanceView theme={theme} setTheme={setTheme} />}
