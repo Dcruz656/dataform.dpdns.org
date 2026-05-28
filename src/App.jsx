@@ -133,6 +133,41 @@ export default function App() {
 
   const navigate = tab => { setActiveTab(tab); setMenuOpen(false); };
 
+  // Called by PublishModal when activeSurveyId is null — creates survey immediately
+  const ensureSurveySaved = async () => {
+    if (activeSurveyIdRef.current) return activeSurveyIdRef.current;
+    try {
+      const themePayload = {
+        ...theme,
+        _config: {
+          instructions: surveyConfig.instructions,
+          requireName: surveyConfig.requireName,
+          conversational: surveyConfig.conversational,
+          timeLimit: surveyConfig.timeLimit,
+          startDate: surveyConfig.startDate,
+          endDate: surveyConfig.endDate,
+        },
+      };
+      const survey = await surveysApi.create({
+        userId: user.id,
+        title: surveyConfig.title,
+        questions,
+        theme: themePayload,
+        scoreRanges: surveyConfig.scoreRanges,
+      });
+      activeSurveyIdRef.current = survey.id;
+      setActiveSurveyId(survey.id);
+      setSurveys(prev => [survey, ...prev]);
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus('idle'), 2000);
+      return survey.id;
+    } catch (err) {
+      console.error('Error saving survey:', err);
+      setSaveStatus('error');
+      return null;
+    }
+  };
+
   const handleNewSurvey = () => {
     isMounted.current = false; // skip auto-save on this render cycle
     activeSurveyIdRef.current = null;
@@ -489,6 +524,7 @@ export default function App() {
                 onDeleteFromBank={handleDeleteFromBank}
                 activeSurveyId={activeSurveyId}
                 saveStatus={saveStatus}
+                onEnsureSaved={ensureSurveySaved}
               />
             )}
             {activeTab === 'analytics'  && (

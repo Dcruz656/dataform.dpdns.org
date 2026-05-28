@@ -3,23 +3,37 @@ import { QRCodeCanvas } from 'qrcode.react';
 import { Check, Copy, Download, X, Link, ExternalLink, Loader } from 'lucide-react';
 import { surveysApi } from '../../lib/db';
 
-export default function PublishModal({ surveyConfig, surveyId, onClose }) {
+export default function PublishModal({ surveyConfig, surveyId, onClose, onEnsureSaved }) {
   const [copied, setCopied] = useState(false);
-  const [activating, setActivating] = useState(false);
+  const [activating, setActivating] = useState(true);
   const [activated, setActivated] = useState(false);
+  const [resolvedId, setResolvedId] = useState(surveyId ?? null);
 
-  const surveyUrl = surveyId
-    ? `https://dataform.dpdns.org/s/${surveyId}`
+  const surveyUrl = resolvedId
+    ? `https://dataform.dpdns.org/s/${resolvedId}`
     : null;
 
   useEffect(() => {
-    if (!surveyId) return;
-    setActivating(true);
-    surveysApi.update(surveyId, { is_active: true })
-      .then(() => setActivated(true))
-      .catch(err => console.error('Error activating survey:', err))
-      .finally(() => setActivating(false));
-  }, [surveyId]);
+    let cancelled = false;
+    (async () => {
+      setActivating(true);
+      let id = surveyId;
+      // If no surveyId yet, create the survey now
+      if (!id && onEnsureSaved) {
+        id = await onEnsureSaved();
+      }
+      if (cancelled || !id) { setActivating(false); return; }
+      setResolvedId(id);
+      try {
+        await surveysApi.update(id, { is_active: true });
+        if (!cancelled) setActivated(true);
+      } catch (err) {
+        console.error('Error activating survey:', err);
+      }
+      if (!cancelled) setActivating(false);
+    })();
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const copyUrl = async () => {
     if (!surveyUrl) return;
