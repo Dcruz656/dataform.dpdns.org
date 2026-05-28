@@ -143,7 +143,7 @@ export default function MySurveysView({
       {/* ── Table / Cards ── */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         {/* Table header (hidden on mobile) */}
-        <div className="hidden sm:grid grid-cols-[1fr_120px_110px_auto] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+        <div className="hidden sm:grid grid-cols-[1fr_110px_110px_160px] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wide">
           <span>Encuesta</span>
           <span className="text-center">Respuestas</span>
           <span className="text-center">Estado</span>
@@ -207,7 +207,7 @@ function SurveyRow({ survey: s, onEdit, onArchive, onDelete, onViewAnalytics, on
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
-    <li className="group grid grid-cols-1 sm:grid-cols-[1fr_120px_110px_auto] gap-2 sm:gap-4 px-5 py-4 hover:bg-blue-50/40 transition-colors items-center">
+    <li className="group grid grid-cols-1 sm:grid-cols-[1fr_110px_110px_160px] gap-2 sm:gap-4 px-5 py-4 hover:bg-blue-50/40 transition-colors items-center">
 
       {/* Name + date */}
       <div className="min-w-0">
@@ -240,7 +240,7 @@ function SurveyRow({ survey: s, onEdit, onArchive, onDelete, onViewAnalytics, on
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity justify-end">
+      <div className="flex items-center gap-1 justify-end opacity-40 group-hover:opacity-100 transition-opacity">
         {/* QR / Link */}
         {s.status === 'Activa' && (
           <ActionBtn
