@@ -41,6 +41,17 @@ export default function PublicSurveyView({ surveyId }) {
   }
 
   if (status === 'already_answered') {
+    const handleAnswerAgain = () => {
+      localStorage.removeItem(STORAGE_KEY(surveyId));
+      setStatus('loading');
+      supabase.from('surveys').select('*').eq('id', surveyId).single()
+        .then(({ data, error }) => {
+          if (error || !data) { setStatus('notfound'); return; }
+          if (!data.is_active) { setStatus('inactive'); return; }
+          setSurvey(data);
+          setStatus('ready');
+        });
+    };
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans p-6">
         <div className="text-center max-w-sm">
@@ -50,7 +61,13 @@ export default function PublicSurveyView({ surveyId }) {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2">Ya respondiste esta encuesta</h1>
-          <p className="text-slate-500">Tu respuesta ya fue registrada desde este dispositivo. ¡Gracias por participar!</p>
+          <p className="text-slate-500 mb-6">Tu respuesta ya fue registrada desde este dispositivo. ¡Gracias por participar!</p>
+          <button
+            onClick={handleAnswerAgain}
+            className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2 transition-colors"
+          >
+            Contestar de nuevo
+          </button>
         </div>
       </div>
     );
