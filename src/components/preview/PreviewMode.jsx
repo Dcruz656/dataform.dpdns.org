@@ -57,25 +57,29 @@ export default function PreviewMode({ surveyConfig, questions, surveyId, onClose
       const scoreRange = score !== null
         ? (surveyConfig.scoreRanges || []).find(r => score >= Number(r.min) && score <= Number(r.max))
         : null;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 7000);
       try {
-        const timeout = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Tiempo de espera agotado. Verifica tu conexión a internet.')), 12000)
-        );
-        await Promise.race([
-          responsesApi.submit({
-            surveyId,
-            respondentName: respondentName || null,
-            answers,
-            timings: Array.isArray(timings) ? timings : Object.entries(timings).map(([qId, t]) => ({ question_id: qId, ...t })),
-            score,
-            scoreRangeTitle: scoreRange?.title ?? null,
-          }),
-          timeout,
-        ]);
+        console.log('[submit] starting insert for survey', surveyId);
+        await responsesApi.submit({
+          surveyId,
+          respondentName: respondentName || null,
+          answers,
+          timings: Array.isArray(timings) ? timings : Object.entries(timings).map(([qId, t]) => ({ question_id: qId, ...t })),
+          score,
+          scoreRangeTitle: scoreRange?.title ?? null,
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        console.log('[submit] success');
         setSubmitted(true);
       } catch (err) {
-        console.error('Error submitting response:', err);
-        const msg = err?.message || err?.code || JSON.stringify(err);
+        clearTimeout(timeoutId);
+        console.error('[submit] error:', err);
+        const isTimeout = err?.name === 'AbortError' || err?.message?.includes('aborted');
+        const msg = isTimeout
+          ? 'Tiempo de espera agotado (7s). Verifica tu conexión a internet.'
+          : (err?.message || err?.code || JSON.stringify(err));
         setSubmitError(msg);
         setSubmitting(false);
       }
