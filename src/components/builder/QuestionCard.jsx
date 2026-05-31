@@ -405,9 +405,72 @@ function TypeConfig({ question, onUpdate }) {
     const updateRow = (idx, val) => { const r = [...question.rows]; r[idx] = val; update({ rows: r }); };
     const updateCol = (idx, val) => { const c = [...question.columns]; c[idx] = val; update({ columns: c }); };
 
+    const LIKERT_PRESETS = [
+      {
+        label: 'Likert 5 — Acuerdo',
+        columns: ['Totalmente en desacuerdo', 'En desacuerdo', 'Neutral', 'De acuerdo', 'Totalmente de acuerdo'],
+        colors: ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e'],
+      },
+      {
+        label: 'Likert 5 — Numérico',
+        columns: ['1', '2', '3', '4', '5'],
+        colors: ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e'],
+      },
+      {
+        label: 'Likert 7 — Numérico',
+        columns: ['1', '2', '3', '4', '5', '6', '7'],
+        colors: ['#ef4444', '#f97316', '#fb923c', '#eab308', '#84cc16', '#4ade80', '#22c55e'],
+      },
+      {
+        label: 'Likert 4 — Frecuencia',
+        columns: ['Nunca', 'A veces', 'Frecuentemente', 'Siempre'],
+        colors: ['#ef4444', '#f97316', '#84cc16', '#22c55e'],
+      },
+      {
+        label: 'Likert 5 — Satisfacción',
+        columns: ['Muy insatisfecho', 'Insatisfecho', 'Neutral', 'Satisfecho', 'Muy satisfecho'],
+        colors: ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e'],
+      },
+    ];
+
+    const applyLikert = preset => {
+      update({ columns: preset.columns, columnColors: preset.colors });
+    };
+
     return (
-      <div className="bg-slate-50 rounded-lg border border-slate-200 p-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+      <div className="bg-slate-50 rounded-lg border border-slate-200 p-5 space-y-5">
+
+        {/* Likert presets */}
+        <div>
+          <label className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2 block">Escala Likert rápida</label>
+          <div className="flex flex-col gap-2">
+            {LIKERT_PRESETS.map(preset => (
+              <button
+                key={preset.label}
+                onClick={() => applyLikert(preset)}
+                className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all text-left group"
+              >
+                {/* Color swatches */}
+                <div className="flex gap-0.5 flex-shrink-0">
+                  {preset.colors.map((color, i) => (
+                    <div
+                      key={i}
+                      className="w-5 h-5 rounded-sm flex items-center justify-center text-white text-[9px] font-bold"
+                      style={{ backgroundColor: color }}
+                    >
+                      {i + 1}
+                    </div>
+                  ))}
+                </div>
+                <span className="text-xs text-slate-600 group-hover:text-blue-700 font-medium truncate">{preset.label}</span>
+                <span className="ml-auto text-xs text-slate-400 group-hover:text-blue-500 flex-shrink-0">Aplicar →</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 border-t border-slate-200 pt-4">
+          {/* Rows */}
           <div>
             <label className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2 block">Filas (criterios)</label>
             <div className="space-y-2">
@@ -420,19 +483,68 @@ function TypeConfig({ question, onUpdate }) {
               <button onClick={() => update({ rows: [...(question.rows || []), `Criterio ${(question.rows?.length || 0) + 1}`] })} className="text-xs text-blue-600 font-semibold hover:text-blue-800">+ Fila</button>
             </div>
           </div>
+
+          {/* Columns */}
           <div>
             <label className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-2 block">Columnas (escala)</label>
             <div className="space-y-2">
-              {question.columns?.map((col, i) => (
-                <div key={i} className="flex gap-2">
-                  <input value={col} onChange={e => updateCol(i, e.target.value)} className="flex-1 border border-slate-300 rounded px-2 py-1.5 text-sm bg-white outline-none focus:border-blue-500" />
-                  <button onClick={() => update({ columns: question.columns.filter((_, ci) => ci !== i) })} className="text-slate-400 hover:text-red-500"><X size={14} /></button>
-                </div>
-              ))}
-              <button onClick={() => update({ columns: [...(question.columns || []), `Col ${(question.columns?.length || 0) + 1}`] })} className="text-xs text-blue-600 font-semibold hover:text-blue-800">+ Columna</button>
+              {question.columns?.map((col, i) => {
+                const color = (question.columnColors || [])[i];
+                return (
+                  <div key={i} className="flex gap-2 items-center">
+                    {/* Color indicator */}
+                    <div
+                      className="w-5 h-5 rounded-sm flex-shrink-0 border border-slate-200"
+                      style={{ backgroundColor: color || '#e2e8f0' }}
+                      title={color || 'Sin color'}
+                    />
+                    <input value={col} onChange={e => updateCol(i, e.target.value)} className="flex-1 border border-slate-300 rounded px-2 py-1.5 text-sm bg-white outline-none focus:border-blue-500" />
+                    {/* Color picker */}
+                    <input
+                      type="color"
+                      value={color || '#e2e8f0'}
+                      onChange={e => {
+                        const colors = [...(question.columnColors || question.columns.map(() => '#e2e8f0'))];
+                        colors[i] = e.target.value;
+                        update({ columnColors: colors });
+                      }}
+                      className="w-7 h-7 rounded cursor-pointer border border-slate-200 p-0.5 bg-white flex-shrink-0"
+                      title="Color de la columna"
+                    />
+                    <button onClick={() => {
+                      const cols = question.columns.filter((_, ci) => ci !== i);
+                      const colors = (question.columnColors || []).filter((_, ci) => ci !== i);
+                      update({ columns: cols, columnColors: colors });
+                    }} className="text-slate-400 hover:text-red-500 flex-shrink-0"><X size={14} /></button>
+                  </div>
+                );
+              })}
+              <button onClick={() => {
+                update({ columns: [...(question.columns || []), `Col ${(question.columns?.length || 0) + 1}`], columnColors: [...(question.columnColors || []), '#e2e8f0'] });
+              }} className="text-xs text-blue-600 font-semibold hover:text-blue-800">+ Columna</button>
             </div>
           </div>
         </div>
+
+        {/* Preview of the scale */}
+        {question.columnColors?.length > 0 && (
+          <div className="border-t border-slate-200 pt-3">
+            <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide mb-2">Vista previa de escala</p>
+            <div className="flex gap-1">
+              {question.columns?.map((col, i) => {
+                const color = (question.columnColors || [])[i] || '#e2e8f0';
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                    <div className="w-full h-6 rounded flex items-center justify-center text-white text-[10px] font-bold shadow-sm" style={{ backgroundColor: color }}>
+                      {col.length <= 3 ? col : i + 1}
+                    </div>
+                    <span className="text-[9px] text-slate-400 text-center leading-tight truncate w-full text-center">{col.slice(0, 12)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     );
   }

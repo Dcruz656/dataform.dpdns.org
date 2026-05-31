@@ -463,31 +463,55 @@ function NPSScale({ question, answer, onAnswer }) {
 
 function Matrix({ question, answer = {}, onAnswer }) {
   const update = (row, col) => onAnswer({ ...answer, [row]: col });
+  const colors = question.columnColors || [];
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr>
             <th className="text-left text-slate-400 font-medium pb-3 pr-4 w-1/3"></th>
-            {question.columns?.map(col => (
-              <th key={col} className="text-center text-slate-600 font-semibold pb-3 px-3 whitespace-nowrap">{col}</th>
-            ))}
+            {question.columns?.map((col, ci) => {
+              const color = colors[ci];
+              return (
+                <th key={col} className="text-center pb-3 px-2 whitespace-nowrap">
+                  {color ? (
+                    <span
+                      className="inline-flex items-center justify-center px-2 py-1 rounded text-white text-xs font-bold min-w-[2rem]"
+                      style={{ backgroundColor: color }}
+                    >
+                      {col}
+                    </span>
+                  ) : (
+                    <span className="text-slate-600 font-semibold text-xs">{col}</span>
+                  )}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
           {question.rows?.map((row, ri) => (
             <tr key={row} className={ri % 2 === 0 ? 'bg-slate-50' : 'bg-white'}>
-              <td className="text-slate-700 font-medium py-3 pr-4 rounded-l-lg">{row}</td>
-              {question.columns?.map(col => (
-                <td key={col} className="text-center py-3 px-3">
-                  <button
-                    onClick={() => update(row, col)}
-                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mx-auto transition-all ${answer[row] === col ? 'border-blue-600 bg-blue-600' : 'border-slate-300 hover:border-blue-400'}`}
-                  >
-                    {answer[row] === col && <div className="w-2 h-2 rounded-full bg-white" />}
-                  </button>
-                </td>
-              ))}
+              <td className="text-slate-700 font-medium py-3 pr-4 rounded-l-lg text-sm">{row}</td>
+              {question.columns?.map((col, ci) => {
+                const color = colors[ci];
+                const selected = answer[row] === col;
+                return (
+                  <td key={col} className="text-center py-3 px-2">
+                    <button
+                      onClick={() => update(row, col)}
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mx-auto transition-all ${
+                        selected
+                          ? 'border-transparent'
+                          : 'border-slate-300 hover:border-slate-400 bg-white'
+                      }`}
+                      style={selected && color ? { backgroundColor: color, borderColor: color } : {}}
+                    >
+                      {selected && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+                    </button>
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>
