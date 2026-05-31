@@ -8,8 +8,8 @@ export default function ArchiveView({ surveys, onUnarchive, onViewAnalytics }) {
         <p className="text-sm text-on-surface-variant mt-0.5">Encuestas archivadas — no aparecen en el Panel de Control.</p>
       </div>
 
-      <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 ambient-shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-outline-variant/10 flex items-center justify-between">
+      <div className="bg-surface-container-lowest rounded-xl border border-surface-container-highest ambient-shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-surface-container-highest flex items-center justify-between">
           <h2 className="font-bold text-on-surface">Encuestas Archivadas</h2>
           <span className="text-xs font-semibold text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-full">
             {surveys.length} {surveys.length === 1 ? 'encuesta' : 'encuestas'}
@@ -23,7 +23,7 @@ export default function ArchiveView({ surveys, onUnarchive, onViewAnalytics }) {
             <p className="text-sm mt-1 text-on-surface-variant/70">Las encuestas archivadas desde el Panel aparecerán aquí.</p>
           </div>
         ) : (
-          <ul className="divide-y divide-outline-variant/10">
+          <ul className="divide-y divide-surface-container-highest">
             {surveys.map(s => (
               <li key={s.id} className="flex items-center justify-between px-6 py-4 hover:bg-surface-container-low transition-colors group">
                 <button onClick={() => onViewAnalytics()} className="flex-1 text-left">

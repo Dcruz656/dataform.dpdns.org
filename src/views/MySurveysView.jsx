@@ -104,7 +104,7 @@ export default function MySurveysView({
             placeholder="Buscar encuesta…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-outline-variant/20 rounded-lg bg-white text-on-surface placeholder-slate-400
+            className="w-full pl-9 pr-4 py-2 text-sm border border-surface-container-highest rounded-lg bg-white text-on-surface placeholder-slate-400
                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-shadow"
           />
         </div>
@@ -115,7 +115,7 @@ export default function MySurveysView({
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="pl-8 pr-8 py-2 text-sm border border-outline-variant/20 rounded-lg bg-white text-on-surface-variant
+            className="pl-8 pr-8 py-2 text-sm border border-surface-container-highest rounded-lg bg-white text-on-surface-variant
                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none cursor-pointer transition-shadow"
           >
             {STATUS_OPTIONS.map(o => (
@@ -130,7 +130,7 @@ export default function MySurveysView({
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value)}
-            className="pl-8 pr-8 py-2 text-sm border border-outline-variant/20 rounded-lg bg-white text-on-surface-variant
+            className="pl-8 pr-8 py-2 text-sm border border-surface-container-highest rounded-lg bg-white text-on-surface-variant
                        focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none cursor-pointer transition-shadow"
           >
             <option value="updated">Más recientes</option>
@@ -141,9 +141,9 @@ export default function MySurveysView({
       </div>
 
       {/* ── Table / Cards ── */}
-      <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-sm overflow-hidden">
+      <div className="bg-surface-container-lowest rounded-xl border border-surface-container-highest shadow-sm overflow-hidden">
         {/* Table header (hidden on mobile) */}
-        <div className="hidden sm:grid grid-cols-[1fr_110px_110px_160px] gap-4 px-5 py-3 bg-surface-container-low border-b border-outline-variant/10 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
+        <div className="hidden sm:grid grid-cols-[1fr_110px_110px_160px] gap-4 px-5 py-3 bg-surface-container-low border-b border-surface-container-highest text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
           <span>Encuesta</span>
           <span className="text-center">Respuestas</span>
           <span className="text-center">Estado</span>
@@ -172,7 +172,7 @@ export default function MySurveysView({
 
         {/* Footer count */}
         {!loading && filtered.length > 0 && (
-          <div className="px-5 py-2.5 bg-surface-container-low border-t border-outline-variant/10 text-xs text-outline text-right">
+          <div className="px-5 py-2.5 bg-surface-container-low border-t border-surface-container-highest text-xs text-outline text-right">
             {filtered.length} de {surveys.length} encuestas
           </div>
         )}
@@ -360,9 +360,9 @@ function LinkModal({ survey, onClose }) {
       className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
         {/* Header */}
-        <div className="p-6 border-b border-outline-variant/10 flex items-center justify-between">
+        <div className="p-6 border-b border-surface-container-highest flex items-center justify-between">
           <div>
             <h2 className="font-bold text-on-surface">Enlace y código QR</h2>
             <p className="text-on-surface-variant text-sm truncate max-w-[260px]">{survey.name}</p>
@@ -377,7 +377,7 @@ function LinkModal({ survey, onClose }) {
           {/* QR */}
           <div>
             <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3">Código QR</p>
-            <div className="flex justify-center p-6 bg-surface-container-low rounded-xl border border-outline-variant/20">
+            <div className="flex justify-center p-6 bg-surface-container-low rounded-xl border border-surface-container-highest">
               <QRCodeCanvas
                 id="ms-qr-canvas"
                 value={url}
@@ -393,7 +393,7 @@ function LinkModal({ survey, onClose }) {
           <div>
             <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Enlace directo</p>
             <div className="flex gap-2">
-              <div className="flex-1 flex items-center gap-2 border border-outline-variant/20 rounded-lg px-3 py-2 bg-surface-container-low min-w-0">
+              <div className="flex-1 flex items-center gap-2 border border-surface-container-highest rounded-lg px-3 py-2 bg-surface-container-low min-w-0">
                 <Link size={13} className="text-outline flex-shrink-0" />
                 <span className="text-sm text-on-surface-variant truncate font-mono">{url}</span>
               </div>

@@ -22,7 +22,7 @@ export default function AppearanceView({ theme, setTheme }) {
         <p className="text-sm text-on-surface-variant mt-0.5">Personaliza la apariencia de tus encuestas públicas.</p>
       </div>
 
-      <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 ambient-shadow p-6 md:p-8 space-y-8">
+      <div className="bg-surface-container-lowest rounded-xl border border-surface-container-highest ambient-shadow p-6 md:p-8 space-y-8">
 
         {/* Logo */}
         <div>
@@ -30,7 +30,7 @@ export default function AppearanceView({ theme, setTheme }) {
           <p className="text-xs text-on-surface-variant mb-4">Se mostrará en la cabecera de la encuesta al completarla.</p>
           {theme.logo ? (
             <div className="flex items-start gap-5">
-              <div className="w-36 h-20 border border-outline-variant/20 rounded-xl overflow-hidden bg-surface-container-low flex items-center justify-center flex-shrink-0">
+              <div className="w-36 h-20 border border-surface-container-highest rounded-xl overflow-hidden bg-surface-container-low flex items-center justify-center flex-shrink-0">
                 <img src={theme.logo} alt="Logotipo" className="max-w-full max-h-full object-contain p-2" />
               </div>
               <div className="space-y-2 pt-1">
@@ -58,7 +58,7 @@ export default function AppearanceView({ theme, setTheme }) {
           )}
         </div>
 
-        <div className="border-t border-outline-variant/20" />
+        <div className="border-t border-surface-container-highest" />
 
         {/* Color */}
         <div>
@@ -99,7 +99,7 @@ export default function AppearanceView({ theme, setTheme }) {
         </div>
 
         {/* Preview */}
-        <div className="p-6 bg-surface-container-low rounded-xl border border-outline-variant/20">
+        <div className="p-6 bg-surface-container-low rounded-xl border border-surface-container-highest">
           <p className="text-xs text-on-surface-variant font-bold uppercase tracking-wider mb-4">Previsualización</p>
           <div style={{ fontFamily: theme.font }} className="space-y-4">
             {theme.logo && <img src={theme.logo} alt="Logotipo" className="max-h-14 max-w-[180px] object-contain mb-2" />}

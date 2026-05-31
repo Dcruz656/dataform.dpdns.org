@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, PenTool, BarChart3, Palette, Archive, Menu, X, LogOut, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, PenTool, BarChart3, Palette, Archive, Menu, X, LogOut, ClipboardList, Bell, HelpCircle, Search } from 'lucide-react';
 import { DEFAULT_QUESTIONS } from './constants';
 import NavItem from './components/NavItem';
 import BuilderView from './components/builder/BuilderView';
@@ -322,37 +322,49 @@ export default function App() {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-primary flex flex-col flex-shrink-0
+        fixed inset-y-0 left-0 z-50 w-64 bg-surface border-r border-surface-container-highest flex flex-col flex-shrink-0
         transition-transform duration-300 ease-in-out
         ${menuOpen ? 'translate-x-0' : '-translate-x-full'}
         md:relative md:inset-auto md:translate-x-0 md:z-auto
       `}>
-        <div className="p-5 border-b border-white/10 flex items-center justify-between">
-          <button
-            onClick={() => navigate('dashboard')}
-            className="text-white font-bold text-xl tracking-wider flex items-center gap-2.5 hover:opacity-80 transition-opacity"
-          >
-            <div className="w-7 h-7 bg-white/20 rounded-lg flex items-center justify-center text-xs font-bold text-white">D</div>
-            DataForm
-          </button>
-          <button onClick={() => setMenuOpen(false)} className="md:hidden text-white/50 hover:text-white p-1 transition-colors">
+        {/* Logo */}
+        <div className="flex items-center gap-3 px-4 py-5 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white flex-shrink-0">
+            <BarChart3 size={20} />
+          </div>
+          <div className="min-w-0">
+            <button onClick={() => navigate('dashboard')} className="font-bold text-xl text-primary tracking-tight leading-none hover:opacity-80 transition-opacity">DataForm</button>
+            <p className="text-xs text-on-surface-variant mt-0.5">Plataforma de Encuestas</p>
+          </div>
+          <button onClick={() => setMenuOpen(false)} className="md:hidden ml-auto text-on-surface-variant hover:text-on-surface p-1 transition-colors">
             <X size={18} />
           </button>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          <NavItem icon={<LayoutDashboard size={18} />} label="Dashboard"      active={activeTab === 'dashboard'}   onClick={() => navigate('dashboard')} />
-          <NavItem icon={<ClipboardList size={18} />}    label="Mis Encuestas"  active={activeTab === 'mysurveys'}   onClick={() => navigate('mysurveys')} />
-          <NavItem icon={<PenTool size={18} />}          label="Constructor"    active={activeTab === 'builder'}     onClick={() => navigate('builder')} />
-          <NavItem icon={<BarChart3 size={18} />}        label="Analítica"      active={activeTab === 'analytics'}   onClick={() => navigate('analytics')} />
-          <NavItem icon={<Palette size={18} />}          label="Apariencia"     active={activeTab === 'appearance'}  onClick={() => navigate('appearance')} />
+        {/* CTA */}
+        <div className="px-4 mb-4">
+          <button
+            onClick={handleNewSurvey}
+            className="w-full bg-primary hover:bg-surface-tint text-on-primary font-semibold text-sm py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-[0_4px_14px_rgba(31,16,142,0.2)] active:scale-95"
+          >
+            <PenTool size={15} /> Nueva Encuesta
+          </button>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
+          <NavItem icon={<LayoutDashboard size={18} />} label="Dashboard"     active={activeTab === 'dashboard'}  onClick={() => navigate('dashboard')} />
+          <NavItem icon={<ClipboardList size={18} />}   label="Mis Encuestas" active={activeTab === 'mysurveys'}  onClick={() => navigate('mysurveys')} />
+          <NavItem icon={<PenTool size={18} />}         label="Constructor"   active={activeTab === 'builder'}    onClick={() => navigate('builder')} />
+          <NavItem icon={<BarChart3 size={18} />}       label="Analítica"     active={activeTab === 'analytics'}  onClick={() => navigate('analytics')} />
+          <NavItem icon={<Palette size={18} />}         label="Apariencia"    active={activeTab === 'appearance'} onClick={() => navigate('appearance')} />
           <NavItem
             icon={<Archive size={18} />}
             label={
               <span className="flex items-center gap-2">
                 Archivo
                 {archivedSurveys.length > 0 && (
-                  <span className="text-xs bg-white/20 text-white px-1.5 py-0.5 rounded-full font-semibold">
+                  <span className="text-xs bg-secondary-container text-on-secondary-container px-1.5 py-0.5 rounded-full font-semibold">
                     {archivedSurveys.length}
                   </span>
                 )}
@@ -364,115 +376,81 @@ export default function App() {
         </nav>
 
         {activeTab === 'builder' && (
-          <div className="p-4 m-4 bg-white/10 rounded-xl border border-white/10 space-y-4 overflow-y-auto max-h-72">
-            <span className="text-xs font-bold text-white/50 uppercase tracking-wider block">Configuración Global</span>
-            <Toggle
-              label="Solicitar Nombre"
-              hint="Pantalla inicial para identificar al usuario."
-              checked={surveyConfig.requireName}
-              onChange={v => setSurveyConfig(c => ({ ...c, requireName: v }))}
-            />
-            <Toggle
-              label="Modo Conversacional"
-              hint="Una pregunta a la vez, estilo Typeform."
-              checked={surveyConfig.conversational}
-              onChange={v => setSurveyConfig(c => ({ ...c, conversational: v }))}
-            />
-            <Toggle
-              label="Tiempo Límite"
-              hint="Definir ventana de disponibilidad."
-              checked={surveyConfig.timeLimit}
-              onChange={v => setSurveyConfig(c => ({ ...c, timeLimit: v }))}
-            />
+          <div className="p-3 m-3 bg-surface-container-low rounded-xl border border-surface-container-highest space-y-3 overflow-y-auto max-h-64">
+            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Configuración</span>
+            <Toggle label="Solicitar Nombre"    hint="Pantalla inicial de identificación." checked={surveyConfig.requireName}    onChange={v => setSurveyConfig(c => ({ ...c, requireName: v }))} />
+            <Toggle label="Modo Conversacional" hint="Una pregunta a la vez."              checked={surveyConfig.conversational}  onChange={v => setSurveyConfig(c => ({ ...c, conversational: v }))} />
+            <Toggle label="Tiempo Límite"       hint="Ventana de disponibilidad."          checked={surveyConfig.timeLimit}       onChange={v => setSurveyConfig(c => ({ ...c, timeLimit: v }))} />
             {surveyConfig.timeLimit && (
-              <div className="space-y-3 pt-1 border-t border-white/10">
-                <DateField
-                  label="Fecha de inicio"
-                  value={surveyConfig.startDate}
-                  max={surveyConfig.endDate || undefined}
-                  onChange={v => setSurveyConfig(c => ({ ...c, startDate: v }))}
-                />
-                <DateField
-                  label="Fecha límite"
-                  value={surveyConfig.endDate}
-                  min={surveyConfig.startDate || undefined}
-                  onChange={v => setSurveyConfig(c => ({ ...c, endDate: v }))}
-                />
+              <div className="space-y-2 pt-1 border-t border-surface-container-highest">
+                <DateField label="Fecha de inicio" value={surveyConfig.startDate} max={surveyConfig.endDate || undefined}   onChange={v => setSurveyConfig(c => ({ ...c, startDate: v }))} />
+                <DateField label="Fecha límite"    value={surveyConfig.endDate}   min={surveyConfig.startDate || undefined} onChange={v => setSurveyConfig(c => ({ ...c, endDate: v }))} />
                 {surveyConfig.startDate && surveyConfig.endDate && (
-                  <p className="text-xs text-white/60 font-medium">
-                    {Math.max(0, Math.ceil(
-                      (new Date(surveyConfig.endDate) - new Date(surveyConfig.startDate)) / 86400000
-                    ))} días de disponibilidad
+                  <p className="text-xs text-primary font-medium">
+                    {Math.max(0, Math.ceil((new Date(surveyConfig.endDate) - new Date(surveyConfig.startDate)) / 86400000))} días de disponibilidad
                   </p>
                 )}
               </div>
             )}
-
-            <div className="border-t border-white/10 pt-3 space-y-2">
+            <div className="border-t border-surface-container-highest pt-2 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white/50 uppercase tracking-wider">Puntaje</span>
-                <button
-                  onClick={() => setSurveyConfig(c => ({
-                    ...c,
-                    scoreRanges: [...(c.scoreRanges || []), { id: Date.now(), min: 0, max: 10, title: 'Resultado', description: '' }],
-                  }))}
-                  className="text-xs text-white/70 hover:text-white font-semibold"
-                >
-                  + Rango
-                </button>
+                <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Puntaje</span>
+                <button onClick={() => setSurveyConfig(c => ({ ...c, scoreRanges: [...(c.scoreRanges || []), { id: Date.now(), min: 0, max: 10, title: 'Resultado', description: '' }] }))} className="text-xs text-primary hover:text-surface-tint font-semibold">+ Rango</button>
               </div>
-              {(surveyConfig.scoreRanges || []).length === 0 && (
-                <p className="text-xs text-white/30 italic">Sin rangos configurados.</p>
-              )}
+              {!(surveyConfig.scoreRanges || []).length && <p className="text-xs text-on-surface-variant/50 italic">Sin rangos.</p>}
               {(surveyConfig.scoreRanges || []).map(range => (
-                <ScoreRangeRow
-                  key={range.id}
-                  range={range}
-                  onChange={updated => setSurveyConfig(c => ({
-                    ...c,
-                    scoreRanges: c.scoreRanges.map(r => r.id === updated.id ? updated : r),
-                  }))}
-                  onDelete={() => setSurveyConfig(c => ({
-                    ...c,
-                    scoreRanges: c.scoreRanges.filter(r => r.id !== range.id),
-                  }))}
+                <ScoreRangeRow key={range.id} range={range}
+                  onChange={u => setSurveyConfig(c => ({ ...c, scoreRanges: c.scoreRanges.map(r => r.id === u.id ? u : r) }))}
+                  onDelete={() => setSurveyConfig(c => ({ ...c, scoreRanges: c.scoreRanges.filter(r => r.id !== range.id) }))}
                 />
               ))}
             </div>
           </div>
         )}
 
-        {/* User profile + sign out */}
-        <div className="p-4 border-t border-white/10 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 overflow-hidden">
-            {user.user_metadata?.avatar_url
-              ? <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
-              : (user.email?.[0] ?? '?').toUpperCase()
-            }
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-white truncate">
-              {user.user_metadata?.full_name ?? user.email}
-            </p>
-            <p className="text-xs text-white/40 truncate">{user.email}</p>
-          </div>
-          <button onClick={signOut} title="Cerrar sesión" className="text-white/40 hover:text-white transition-colors p-1 flex-shrink-0">
-            <LogOut size={16} />
+        {/* Footer */}
+        <div className="p-4 border-t border-surface-container-highest">
+          <button
+            onClick={signOut}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-error hover:bg-error-container transition-all duration-200"
+          >
+            <LogOut size={18} /> Cerrar Sesión
           </button>
         </div>
       </aside>
 
       {/* Main */}
       <main className="flex-1 h-screen flex flex-col overflow-hidden">
-        <div className="md:hidden flex-shrink-0 bg-primary px-4 py-3 flex items-center gap-3 border-b border-white/10">
-          <button onClick={() => setMenuOpen(true)} className="text-white/70 hover:text-white p-1 -ml-1 transition-colors">
-            <Menu size={20} />
-          </button>
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 bg-blue-600 rounded flex items-center justify-center text-xs font-bold text-white">D</div>
-            <span className="text-white font-bold text-base tracking-wider">DataForm</span>
+        {/* Top App Bar */}
+        <header className="flex-shrink-0 h-16 bg-surface-container-lowest border-b border-surface-container-highest ambient-shadow flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setMenuOpen(true)} className="md:hidden text-on-surface-variant hover:text-on-surface p-1 -ml-1 transition-colors">
+              <Menu size={22} />
+            </button>
+            <div className="relative hidden sm:block">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Buscar encuestas..."
+                className="pl-9 pr-4 py-2 bg-surface-container-low border border-transparent focus:border-primary focus:ring-1 focus:ring-primary rounded-full text-sm text-on-surface w-56 transition-all outline-none"
+              />
+            </div>
           </div>
-        </div>
+          <div className="flex items-center gap-1">
+            <button className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-95">
+              <Bell size={18} />
+            </button>
+            <button className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-95">
+              <HelpCircle size={18} />
+            </button>
+            <div className="w-8 h-8 ml-2 rounded-full overflow-hidden border-2 border-surface-container-highest flex-shrink-0">
+              {user.user_metadata?.avatar_url
+                ? <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />
+                : <div className="w-full h-full bg-primary-fixed flex items-center justify-center text-primary font-bold text-xs">{(user.email?.[0] ?? '?').toUpperCase()}</div>
+              }
+            </div>
+          </div>
+        </header>
 
         <div className="flex-1 overflow-y-auto flex flex-col">
           <div className="flex-1 p-4 md:p-8">
@@ -551,30 +529,27 @@ function LoadingScreen() {
 function Toggle({ label, hint, checked, onChange }) {
   return (
     <label className="flex items-start gap-3 text-sm cursor-pointer group">
-      <div
-        onClick={() => onChange(!checked)}
-        className={`w-10 h-5 rounded-full relative flex-shrink-0 transition-colors mt-0.5 ${checked ? 'bg-white/80' : 'bg-white/20'}`}
-      >
-        <div className={`absolute top-1 w-3 h-3 rounded-full shadow transition-all ${checked ? 'left-6 bg-primary' : 'left-1 bg-white'}`} />
+      <div onClick={() => onChange(!checked)} className={`w-9 h-5 rounded-full relative flex-shrink-0 transition-colors mt-0.5 ${checked ? 'bg-primary' : 'bg-surface-container-highest'}`}>
+        <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all ${checked ? 'left-4' : 'left-0.5'}`} />
       </div>
       <div>
-        <div className="font-medium text-white/80 group-hover:text-white transition-colors">{label}</div>
-        {hint && <p className="text-xs text-white/40 mt-0.5 leading-relaxed">{hint}</p>}
+        <div className="font-medium text-on-surface group-hover:text-primary transition-colors text-xs">{label}</div>
+        {hint && <p className="text-[10px] text-on-surface-variant mt-0.5 leading-relaxed">{hint}</p>}
       </div>
     </label>
   );
 }
 
 function ScoreRangeRow({ range, onChange, onDelete }) {
-  const inp = "bg-white/10 border border-white/20 rounded px-1.5 py-1 text-xs text-white outline-none focus:border-white/50";
+  const inp = "bg-white border border-surface-container-highest rounded px-1.5 py-1 text-xs text-on-surface outline-none focus:border-primary";
   return (
-    <div className="bg-white/10 rounded-lg p-2.5 space-y-1.5 border border-white/10">
-      <div className="flex items-center gap-1.5">
-        <input type="number" value={range.min} onChange={e => onChange({ ...range, min: Number(e.target.value) })} className={`w-14 ${inp}`} placeholder="min" />
-        <span className="text-xs text-white/30">–</span>
-        <input type="number" value={range.max} onChange={e => onChange({ ...range, max: Number(e.target.value) })} className={`w-14 ${inp}`} placeholder="max" />
+    <div className="bg-white rounded-lg p-2 space-y-1.5 border border-surface-container-highest">
+      <div className="flex items-center gap-1">
+        <input type="number" value={range.min} onChange={e => onChange({ ...range, min: Number(e.target.value) })} className={`w-12 ${inp}`} placeholder="min" />
+        <span className="text-xs text-on-surface-variant">–</span>
+        <input type="number" value={range.max} onChange={e => onChange({ ...range, max: Number(e.target.value) })} className={`w-12 ${inp}`} placeholder="max" />
         <input type="text" value={range.title} onChange={e => onChange({ ...range, title: e.target.value })} placeholder="Título" className={`flex-1 ${inp} min-w-0`} />
-        <button onClick={onDelete} className="text-white/30 hover:text-red-300 transition-colors p-0.5 flex-shrink-0"><X size={12} /></button>
+        <button onClick={onDelete} className="text-on-surface-variant hover:text-error transition-colors p-0.5 flex-shrink-0"><X size={12} /></button>
       </div>
       <input type="text" value={range.description} onChange={e => onChange({ ...range, description: e.target.value })} placeholder="Descripción..." className={`w-full ${inp}`} />
     </div>
@@ -584,9 +559,9 @@ function ScoreRangeRow({ range, onChange, onDelete }) {
 function DateField({ label, value, min, max, onChange }) {
   return (
     <div className="space-y-1">
-      <label className="text-xs font-semibold text-white/50 block">{label}</label>
+      <label className="text-xs font-semibold text-on-surface-variant block">{label}</label>
       <input type="date" value={value} min={min} max={max} onChange={e => onChange(e.target.value)}
-        className="w-full bg-white/10 border border-white/20 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-white/50 transition-colors [color-scheme:dark]"
+        className="w-full bg-white border border-surface-container-highest rounded-lg px-2 py-1.5 text-xs text-on-surface outline-none focus:border-primary transition-colors"
       />
     </div>
   );

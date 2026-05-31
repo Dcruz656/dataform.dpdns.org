@@ -28,8 +28,8 @@ export default function DashboardView({ surveys = [], loading = false, onViewAna
       </div>
 
       {/* Recent surveys */}
-      <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 ambient-shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-outline-variant/10 flex items-center justify-between">
+      <div className="bg-surface-container-lowest rounded-xl border border-surface-container-highest ambient-shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-surface-container-highest flex items-center justify-between">
           <h2 className="font-bold text-on-surface">Encuestas Recientes</h2>
           <span className="text-xs text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-full font-medium">{surveys.length} encuestas</span>
         </div>
@@ -45,7 +45,7 @@ export default function DashboardView({ surveys = [], loading = false, onViewAna
             <button onClick={onNewSurvey} className="text-primary hover:underline font-semibold">Crear mi primera encuesta</button>
           </div>
         ) : (
-          <ul className="divide-y divide-outline-variant/10">
+          <ul className="divide-y divide-surface-container-highest">
             {surveys.map(s => (
               <li key={s.id} className="flex items-center px-6 py-4 hover:bg-surface-container-low transition-colors group">
                 <button onClick={onViewAnalytics} className="flex-1 flex items-center justify-between gap-3 text-left min-w-0">
@@ -75,7 +75,7 @@ export default function DashboardView({ surveys = [], loading = false, onViewAna
 
 function StatCard({ icon, label, value, sub, color }) {
   return (
-    <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 ambient-shadow p-6">
+    <div className="bg-surface-container-lowest rounded-xl border border-surface-container-highest ambient-shadow p-6">
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${color}`}>
         {icon}
       </div>
