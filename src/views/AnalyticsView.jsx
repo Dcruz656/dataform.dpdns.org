@@ -133,57 +133,285 @@ function DonutChart({ questions, responses }) {
   );
 }
 
-/* ── Per-question horizontal bars ────────────────────────────────── */
-function QuestionBars({ questions, responses }) {
-  const realQs = questions.filter(q => q.type !== 'section');
-  if (!realQs.length) return <p className="text-sm text-on-surface-variant italic">Sin preguntas.</p>;
+/* ── Per-question rich cards ─────────────────────────────────────── */
+function EmptyQ() {
+  return <p className="text-sm text-on-surface-variant italic py-4 text-center">Sin respuestas para esta pregunta.</p>;
+}
 
+function MatrixChart({ question, responses }) {
+  const { rows = [], columns = [], columnColors = [] } = question;
+  const answered = responses.filter(r => r.answers?.[question.id] && typeof r.answers[question.id] === 'object');
+  if (!answered.length) return <EmptyQ />;
   return (
-    <div className="flex flex-col gap-6">
-      {realQs.map((q, i) => {
-        let display = null;
-
-        if (q.type === 'multiple_choice') {
-          const counts = getChoiceCounts(responses, q.id);
-          const total = counts.reduce((s, c) => s + c.value, 0) || 1;
-          const top = counts[0];
-          if (!top) return null;
-          const pct = Math.round((top.value / total) * 100);
-          display = { label: `"${top.name}"`, score: `${pct}%`, pct, color: 'bg-primary' };
-        } else if (q.type === 'rating') {
-          const avg = getNumericAvg(responses, q.id);
-          if (avg === null) return null;
-          display = { label: `${avg.toFixed(1)} / ${q.maxStars || 5} ★`, score: `${avg.toFixed(1)}`, pct: Math.round((avg / (q.maxStars || 5)) * 100), color: 'bg-amber-400' };
-        } else if (q.type === 'nps') {
-          const score = getNPSScore(responses, q.id);
-          if (score === null) return null;
-          display = { label: `NPS Score`, score: String(score), pct: Math.round(((score + 100) / 200) * 100), color: score >= 50 ? 'bg-secondary' : score >= 0 ? 'bg-amber-400' : 'bg-error' };
-        } else if (q.type === 'slider') {
-          const avg = getNumericAvg(responses, q.id);
-          if (avg === null) return null;
-          const max = q.max ?? 10;
-          display = { label: `Promedio ${avg.toFixed(1)} / ${max}`, score: avg.toFixed(1), pct: Math.round((avg / max) * 100), color: 'bg-primary' };
-        } else {
-          const count = responses.filter(r => r.answers?.[q.id]?.toString().trim()).length;
-          if (!count) return null;
-          display = { label: `${count} respuestas abiertas`, score: String(count), pct: Math.round((count / responses.length) * 100), color: 'bg-surface-tint' };
-        }
-
-        if (!display) return null;
-        return (
-          <div key={q.id} className="flex flex-col gap-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-on-surface font-medium truncate max-w-[70%]">
-                <span className="text-on-surface-variant mr-1">P{i + 1}.</span>{q.text || '(sin texto)'}
-              </span>
-              <span className="text-on-surface-variant flex-shrink-0">{display.label}</span>
+    <div className="space-y-4">
+      {/* Legend */}
+      <div className="flex flex-wrap gap-3">
+        {columns.map((col, ci) => (
+          <div key={ci} className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: columnColors[ci] || '#94a3b8' }} />
+            <span className="text-xs text-on-surface-variant">{col}</span>
+          </div>
+        ))}
+      </div>
+      {/* Per-row stacked bars */}
+      <div className="space-y-5">
+        {rows.map(row => {
+          const counts = {};
+          columns.forEach(col => { counts[col] = 0; });
+          answered.forEach(r => { const v = r.answers[question.id]?.[row]; if (v != null && v in counts) counts[v]++; });
+          const total = answered.length;
+          return (
+            <div key={row} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-on-surface">{row}</span>
+                <span className="text-xs text-on-surface-variant">{total} resp.</span>
+              </div>
+              {/* Stacked bar */}
+              <div className="flex h-9 rounded-xl overflow-hidden gap-px">
+                {columns.map((col, ci) => {
+                  const count = counts[col] || 0;
+                  const pct = total > 0 ? (count / total) * 100 : 0;
+                  const color = columnColors[ci] || '#94a3b8';
+                  if (pct === 0) return null;
+                  return (
+                    <div key={ci} className="flex items-center justify-center text-white text-xs font-bold transition-all relative group/seg"
+                      style={{ width: `${pct}%`, backgroundColor: color, minWidth: 3 }}
+                      title={`${col}: ${count} (${Math.round(pct)}%)`}
+                    >
+                      {pct >= 12 ? `${Math.round(pct)}%` : ''}
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Per-column breakdown */}
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                {columns.map((col, ci) => {
+                  const count = counts[col] || 0;
+                  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                  return (
+                    <span key={ci} className="flex items-center gap-1 text-xs text-on-surface-variant">
+                      <span className="w-2 h-2 rounded-sm flex-shrink-0" style={{ backgroundColor: columnColors[ci] || '#94a3b8' }} />
+                      {col}: <strong className="text-on-surface ml-0.5">{count}</strong>
+                      <span className="text-on-surface-variant/60">({pct}%)</span>
+                    </span>
+                  );
+                })}
+              </div>
             </div>
-            <div className="w-full bg-surface-container h-3 rounded-full overflow-hidden">
-              <div className={`${display.color} h-full rounded-full transition-all`} style={{ width: `${Math.max(display.pct, 2)}%` }} />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function ChoiceChart({ question, responses }) {
+  const counts = getChoiceCounts(responses, question.id);
+  const total = counts.reduce((s, c) => s + c.value, 0) || 1;
+  if (!counts.length) return <EmptyQ />;
+  const PALETTE = ['#1f108e','#416656','#544fc0','#003421','#c8c4d5','#a8cfbc'];
+  return (
+    <div className="space-y-3">
+      {counts.map((d, i) => {
+        const pct = Math.round((d.value / total) * 100);
+        return (
+          <div key={i} className="space-y-1">
+            <div className="flex justify-between text-sm">
+              <span className="text-on-surface font-medium flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: PALETTE[i % PALETTE.length] }} />
+                {d.name}
+              </span>
+              <span className="text-on-surface-variant font-semibold">{d.value} <span className="font-normal text-xs">({pct}%)</span></span>
+            </div>
+            <div className="h-3 bg-surface-container rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(pct, 1)}%`, backgroundColor: PALETTE[i % PALETTE.length] }} />
             </div>
           </div>
         );
-      }).filter(Boolean)}
+      })}
+    </div>
+  );
+}
+
+function RatingChart({ question, responses }) {
+  const max = question.maxStars || 5;
+  const avg = getNumericAvg(responses, question.id);
+  const vals = responses.map(r => r.answers?.[question.id]).filter(v => v != null && !isNaN(Number(v))).map(Number);
+  if (!vals.length) return <EmptyQ />;
+  const dist = Array.from({ length: max }, (_, i) => ({ star: i + 1, count: vals.filter(v => v === i + 1).length })).reverse();
+  const maxCount = Math.max(...dist.map(d => d.count), 1);
+  return (
+    <div className="space-y-4">
+      <div className="flex items-baseline gap-3">
+        <span className="text-4xl font-bold text-amber-500">{avg?.toFixed(1)}</span>
+        <span className="text-on-surface-variant text-sm">/ {max} promedio</span>
+        <div className="flex gap-0.5 ml-1">
+          {Array.from({ length: max }).map((_, i) => (
+            <span key={i} className={`text-xl ${i < Math.round(avg ?? 0) ? 'text-amber-400' : 'text-surface-container-highest'}`}>★</span>
+          ))}
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        {dist.map(d => (
+          <div key={d.star} className="flex items-center gap-3">
+            <span className="text-xs font-bold text-amber-500 w-8 text-right flex-shrink-0">{d.star}★</span>
+            <div className="flex-1 h-3 bg-surface-container rounded-full overflow-hidden">
+              <div className="h-full bg-amber-400 rounded-full" style={{ width: `${(d.count / maxCount) * 100}%` }} />
+            </div>
+            <span className="text-xs text-on-surface-variant w-20 flex-shrink-0">
+              {d.count} ({vals.length ? Math.round((d.count / vals.length) * 100) : 0}%)
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function NPSChart({ question, responses }) {
+  const vals = responses.map(r => r.answers?.[question.id]).filter(v => v != null && !isNaN(Number(v))).map(Number);
+  if (!vals.length) return <EmptyQ />;
+  const det = vals.filter(n => n <= 6);
+  const pas = vals.filter(n => n >= 7 && n <= 8);
+  const pro = vals.filter(n => n >= 9);
+  const score = Math.round(((pro.length - det.length) / vals.length) * 100);
+  const total = vals.length;
+  const detPct = Math.round((det.length / total) * 100);
+  const pasPct = Math.round((pas.length / total) * 100);
+  const proPct = Math.round((pro.length / total) * 100);
+  return (
+    <div className="space-y-4">
+      <div className="flex items-baseline gap-3">
+        <span className={`text-5xl font-bold ${score >= 50 ? 'text-secondary' : score >= 0 ? 'text-amber-500' : 'text-error'}`}>{score}</span>
+        <span className="text-on-surface-variant text-sm">NPS Score (−100 a +100)</span>
+      </div>
+      <div className="flex h-9 rounded-xl overflow-hidden gap-px">
+        {detPct > 0 && <div className="flex items-center justify-center text-white text-xs font-bold" style={{ width: `${detPct}%`, backgroundColor: '#ef4444' }}>{detPct >= 8 ? `${detPct}%` : ''}</div>}
+        {pasPct > 0 && <div className="flex items-center justify-center text-white text-xs font-bold" style={{ width: `${pasPct}%`, backgroundColor: '#f59e0b' }}>{pasPct >= 8 ? `${pasPct}%` : ''}</div>}
+        {proPct > 0 && <div className="flex items-center justify-center text-white text-xs font-bold" style={{ width: `${proPct}%`, backgroundColor: '#22c55e' }}>{proPct >= 8 ? `${proPct}%` : ''}</div>}
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="bg-red-50 rounded-xl p-3 border border-red-100">
+          <p className="text-xs font-semibold text-red-500 mb-1">Detractores 0–6</p>
+          <p className="text-2xl font-bold text-red-600">{det.length}</p>
+          <p className="text-xs text-red-400">{detPct}%</p>
+        </div>
+        <div className="bg-amber-50 rounded-xl p-3 border border-amber-100">
+          <p className="text-xs font-semibold text-amber-500 mb-1">Pasivos 7–8</p>
+          <p className="text-2xl font-bold text-amber-600">{pas.length}</p>
+          <p className="text-xs text-amber-400">{pasPct}%</p>
+        </div>
+        <div className="bg-green-50 rounded-xl p-3 border border-green-100">
+          <p className="text-xs font-semibold text-green-500 mb-1">Promotores 9–10</p>
+          <p className="text-2xl font-bold text-green-600">{pro.length}</p>
+          <p className="text-xs text-green-400">{proPct}%</p>
+        </div>
+      </div>
+      <div className="flex gap-1.5 flex-wrap">
+        {Array.from({ length: 11 }, (_, i) => {
+          const count = vals.filter(n => n === i).length;
+          const color = i <= 6 ? '#ef4444' : i <= 8 ? '#f59e0b' : '#22c55e';
+          return (
+            <div key={i} className="flex flex-col items-center gap-0.5">
+              <span className="text-xs font-bold w-9 h-9 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: color, opacity: count > 0 ? 1 : 0.2 }}>{i}</span>
+              <span className="text-[10px] text-on-surface-variant">{count}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SliderChart({ question, responses }) {
+  const min = question.min ?? 0;
+  const max = question.max ?? 10;
+  const avg = getNumericAvg(responses, question.id);
+  const vals = responses.map(r => r.answers?.[question.id]).filter(v => v != null && !isNaN(Number(v))).map(Number);
+  if (!vals.length) return <EmptyQ />;
+  const dist = [];
+  for (let i = min; i <= max; i++) dist.push({ val: i, count: vals.filter(v => v === i).length });
+  const maxCount = Math.max(...dist.map(d => d.count), 1);
+  return (
+    <div className="space-y-4">
+      <div className="flex items-baseline gap-3">
+        <span className="text-4xl font-bold text-primary">{avg?.toFixed(1)}</span>
+        <span className="text-on-surface-variant text-sm">promedio ({min}–{max})</span>
+      </div>
+      <div className="flex items-end gap-1 h-20">
+        {dist.map(d => (
+          <div key={d.val} className="flex-1 flex flex-col items-center gap-0.5">
+            <div className="w-full bg-primary rounded-t-sm" style={{ height: `${(d.count / maxCount) * 64}px`, minHeight: d.count > 0 ? 3 : 0, opacity: d.count > 0 ? 1 : 0.15 }} />
+            <span className="text-[9px] text-on-surface-variant">{d.val}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TextChart({ responses, question }) {
+  const answers = responses.map(r => ({ text: r.answers?.[question.id], name: r.respondent_name, date: r.submitted_at })).filter(a => a.text?.toString().trim());
+  if (!answers.length) return <EmptyQ />;
+  return (
+    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+      {answers.map((a, i) => (
+        <div key={i} className="p-3 bg-surface-container-low rounded-xl border border-surface-variant">
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="text-xs font-semibold text-on-surface-variant">{a.name || `Respuesta ${i + 1}`}</span>
+            <span className="text-xs text-on-surface-variant">{fmtDateShort(a.date)}</span>
+          </div>
+          <p className="text-sm text-on-surface leading-relaxed">"{String(a.text)}"</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function QuestionCards({ questions, responses }) {
+  let qNum = 0;
+  return (
+    <div className="space-y-4">
+      {questions.map(q => {
+        if (q.type === 'section') {
+          return (
+            <div key={q.id} className="flex items-center gap-3 pt-2">
+              <div className="h-px flex-1 bg-surface-container-highest" />
+              <span className="text-xs font-bold text-primary uppercase tracking-wider px-2">{q.title || 'Sección'}</span>
+              <div className="h-px flex-1 bg-surface-container-highest" />
+            </div>
+          );
+        }
+        qNum++;
+        const n = qNum;
+        const answered = responses.filter(r => { const v = r.answers?.[q.id]; return v != null && v !== '' && !(typeof v === 'object' && !Object.keys(v).length); }).length;
+        const pct = responses.length ? Math.round((answered / responses.length) * 100) : 0;
+        let chart = null;
+        if (q.type === 'matrix')          chart = <MatrixChart question={q} responses={responses} />;
+        else if (q.type === 'multiple_choice') chart = <ChoiceChart question={q} responses={responses} />;
+        else if (q.type === 'rating')     chart = <RatingChart question={q} responses={responses} />;
+        else if (q.type === 'nps')        chart = <NPSChart question={q} responses={responses} />;
+        else if (q.type === 'slider')     chart = <SliderChart question={q} responses={responses} />;
+        else                              chart = <TextChart question={q} responses={responses} />;
+        return (
+          <div key={q.id} className="bg-surface-container-lowest rounded-xl border border-surface-variant ambient-shadow p-6">
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold text-primary bg-primary-fixed px-2 py-0.5 rounded-full">P{n}</span>
+                  <span className="text-xs text-on-surface-variant capitalize bg-surface-container px-2 py-0.5 rounded-full">{q.type.replace('_', ' ')}</span>
+                </div>
+                <h4 className="font-semibold text-on-surface text-sm leading-snug">{q.text || '(sin texto)'}</h4>
+              </div>
+              <div className="flex-shrink-0 text-right">
+                <p className="text-lg font-bold text-on-surface">{answered}</p>
+                <p className="text-xs text-on-surface-variant">{pct}% resp.</p>
+              </div>
+            </div>
+            {chart}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -428,11 +656,11 @@ export default function AnalyticsView({ surveys = [], initialSurveyId }) {
             </div>
           </div>
 
-          {/* Horizontal bar chart */}
-          {realQs.length > 0 && (
-            <div className="bg-surface-container-lowest p-6 rounded-xl ambient-shadow border border-surface-variant">
-              <h3 className="text-xl font-semibold text-on-surface mb-6">Resultados por Pregunta</h3>
-              <QuestionBars questions={questions} responses={responses} />
+          {/* Per-question cards */}
+          {questions.filter(q => q.type !== 'section').length > 0 && (
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-on-surface">Resultados por pregunta</h3>
+              <QuestionCards questions={questions} responses={responses} />
             </div>
           )}
 
