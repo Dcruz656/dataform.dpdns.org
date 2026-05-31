@@ -507,7 +507,7 @@ export default function App() {
             {activeTab === 'appearance' && <AppearanceView theme={theme} setTheme={setTheme} />}
           </div>
           <footer className="px-4 md:px-8 py-4 border-t border-outline-variant/20 bg-surface-container-lowest text-center text-xs text-on-surface-variant flex-shrink-0">
-            © 2025 DataForm &mdash; Derechos Reservados
+            © 2025 DataForm. Daniel Cruz Bautista. Todos los derechos reservados.
           </footer>
         </div>
       </main>

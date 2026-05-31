@@ -249,7 +249,7 @@ export default function LoginView() {
             ))}
           </div>
           <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-outline-variant/20 text-sm text-on-surface-variant">
-            <p>© 2025 DataForm. Todos los derechos reservados.</p>
+            <p>© 2025 DataForm. Daniel Cruz Bautista. Todos los derechos reservados.</p>
             <div className="flex gap-4 mt-4 md:mt-0">
               <a href="#" className="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-high flex items-center justify-center transition-colors">
                 <span className="material-symbols-outlined text-[18px]">share</span>
