@@ -1,4 +1,4 @@
-import { PenTool, BarChart3, Archive, Pencil } from 'lucide-react';
+import { PenTool, BarChart3, Archive, Pencil, TrendingUp, Users, CheckCircle } from 'lucide-react';
 
 export default function DashboardView({ surveys = [], loading = false, onViewAnalytics, onNewSurvey, onArchive, onEdit }) {
   const active = surveys.filter(s => s.status === 'Activa').length;
@@ -8,74 +8,80 @@ export default function DashboardView({ surveys = [], loading = false, onViewAna
   return (
     <div className="space-y-6 max-w-5xl">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-900">Panel de Control</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-on-surface">Panel de Control</h1>
+          <p className="text-sm text-on-surface-variant mt-0.5">Bienvenido de nuevo — aquí está el resumen de tu actividad.</p>
+        </div>
         <button
           onClick={onNewSurvey}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
+          className="px-5 py-2.5 bg-primary text-on-primary rounded-xl font-semibold text-sm hover:bg-surface-tint transition-all shadow-sm flex items-center gap-2 active:scale-95"
         >
-          <PenTool size={16} /> Nueva Encuesta
+          <PenTool size={15} /> Nueva Encuesta
         </button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-        <StatCard label="Respuestas Totales" value={total.toLocaleString('es-MX')} trend="↑ +12% este mes" trendColor="text-emerald-600" />
-        <StatCard label="Tasa de Finalización" value="88.5%" trend="↑ +2.1% este mes" trendColor="text-emerald-600" />
-        <StatCard label="Encuestas Activas" value={active} trend={`${drafts} en borrador`} trendColor="text-slate-400" />
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <StatCard icon={<Users size={20} />}       label="Respuestas Totales" value={total.toLocaleString('es-MX')} sub={`${active} encuestas activas`} color="bg-primary-fixed text-on-primary-fixed-variant" />
+        <StatCard icon={<TrendingUp size={20} />}  label="Tasa de Finalización" value="88.5%" sub="↑ +2.1% este mes" color="bg-tertiary-fixed text-on-tertiary-fixed" />
+        <StatCard icon={<CheckCircle size={20} />} label="Encuestas Activas"  value={active} sub={`${drafts} en borrador`} color="bg-secondary-fixed text-on-secondary-fixed-variant" />
       </div>
-      <div className="bg-white rounded-lg border border-slate-200 shadow-sm">
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="font-bold text-slate-800">Encuestas Recientes</h2>
-          <span className="text-xs text-slate-400">{surveys.length} encuestas</span>
+
+      {/* Recent surveys */}
+      <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 ambient-shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-outline-variant/10 flex items-center justify-between">
+          <h2 className="font-bold text-on-surface">Encuestas Recientes</h2>
+          <span className="text-xs text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-full font-medium">{surveys.length} encuestas</span>
         </div>
         {loading ? (
-          <div className="py-12 text-center text-slate-400 text-sm">Cargando encuestas...</div>
+          <div className="py-12 text-center text-on-surface-variant text-sm">
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            Cargando encuestas...
+          </div>
         ) : surveys.length === 0 ? (
-          <div className="py-12 text-center text-slate-400 text-sm">
-            No hay encuestas. <button onClick={onNewSurvey} className="text-blue-600 hover:underline font-medium">Crear una nueva</button>
+          <div className="py-14 text-center text-on-surface-variant text-sm">
+            <PenTool size={36} className="mx-auto mb-3 opacity-20" />
+            <p className="font-medium mb-1">No hay encuestas todavía</p>
+            <button onClick={onNewSurvey} className="text-primary hover:underline font-semibold">Crear mi primera encuesta</button>
           </div>
         ) : (
-          surveys.map(s => (
-            <div
-              key={s.id}
-              className="flex items-center px-5 py-4 border-b border-slate-50 last:border-0 hover:bg-blue-50 transition-colors group"
-            >
-              <button onClick={onViewAnalytics} className="flex-1 flex items-center justify-between gap-3 text-left min-w-0">
-                <div className="min-w-0">
-                  <p className="font-medium text-slate-800 group-hover:text-blue-700 transition-colors truncate">{s.name}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{s.responses} respuestas</p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${s.statusColor}`}>{s.status}</span>
-                  <BarChart3 size={15} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
-                </div>
-              </button>
-              <button
-                onClick={e => { e.stopPropagation(); onEdit?.(s.id); }}
-                title="Editar encuesta"
-                className="ml-2 p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors sm:opacity-0 sm:group-hover:opacity-100"
-              >
-                <Pencil size={15} />
-              </button>
-              <button
-                onClick={e => { e.stopPropagation(); onArchive(s.id); }}
-                title="Archivar encuesta"
-                className="ml-2 p-1.5 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-md transition-colors sm:opacity-0 sm:group-hover:opacity-100"
-              >
-                <Archive size={15} />
-              </button>
-            </div>
-          ))
+          <ul className="divide-y divide-outline-variant/10">
+            {surveys.map(s => (
+              <li key={s.id} className="flex items-center px-6 py-4 hover:bg-surface-container-low transition-colors group">
+                <button onClick={onViewAnalytics} className="flex-1 flex items-center justify-between gap-3 text-left min-w-0">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-on-surface group-hover:text-primary transition-colors truncate text-sm">{s.name}</p>
+                    <p className="text-xs text-on-surface-variant mt-0.5">{s.responses} {s.responses === 1 ? 'respuesta' : 'respuestas'}</p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${s.statusColor}`}>{s.status}</span>
+                    <BarChart3 size={15} className="text-outline group-hover:text-primary transition-colors" />
+                  </div>
+                </button>
+                <button onClick={e => { e.stopPropagation(); onEdit?.(s.id); }} title="Editar" className="ml-2 p-1.5 text-outline hover:text-primary hover:bg-primary-fixed/30 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+                  <Pencil size={14} />
+                </button>
+                <button onClick={e => { e.stopPropagation(); onArchive(s.id); }} title="Archivar" className="ml-1 p-1.5 text-outline hover:text-secondary hover:bg-secondary-fixed/30 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+                  <Archive size={14} />
+                </button>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
     </div>
   );
 }
 
-function StatCard({ label, value, trend, trendColor }) {
+function StatCard({ icon, label, value, sub, color }) {
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-      <h3 className="text-sm font-medium text-slate-500">{label}</h3>
-      <p className="text-3xl font-bold text-slate-900 mt-2">{value}</p>
-      <span className={`text-xs font-medium flex items-center mt-2 ${trendColor}`}>{trend}</span>
+    <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 ambient-shadow p-6">
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-4 ${color}`}>
+        {icon}
+      </div>
+      <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1">{label}</p>
+      <p className="text-3xl font-bold text-on-surface">{value}</p>
+      <p className="text-xs text-on-surface-variant mt-1.5">{sub}</p>
     </div>
   );
 }

@@ -72,14 +72,14 @@ export default function MySurveysView({
       {/* ── Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Mis Encuestas</h1>
-          <p className="text-sm text-slate-500 mt-0.5">
+          <h1 className="text-2xl font-bold text-on-surface">Mis Encuestas</h1>
+          <p className="text-sm text-on-surface-variant mt-0.5">
             Gestiona y revisa todas tus encuestas creadas
           </p>
         </div>
         <button
           onClick={onNewSurvey}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 active:scale-95 transition-all shadow-sm self-start sm:self-auto"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg font-medium text-sm hover:bg-surface-tint active:scale-95 transition-all shadow-sm self-start sm:self-auto"
         >
           <Plus size={16} />
           Nueva Encuesta
@@ -98,25 +98,25 @@ export default function MySurveysView({
       <div className="flex flex-col sm:flex-row gap-3">
         {/* Search */}
         <div className="relative flex-1">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none" />
           <input
             type="text"
             placeholder="Buscar encuesta…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-800 placeholder-slate-400
-                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-shadow"
+            className="w-full pl-9 pr-4 py-2 text-sm border border-outline-variant/20 rounded-lg bg-white text-on-surface placeholder-slate-400
+                       focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-shadow"
           />
         </div>
 
         {/* Status filter */}
         <div className="relative">
-          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <Filter size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none" />
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
-            className="pl-8 pr-8 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-700
-                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer transition-shadow"
+            className="pl-8 pr-8 py-2 text-sm border border-outline-variant/20 rounded-lg bg-white text-on-surface-variant
+                       focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none cursor-pointer transition-shadow"
           >
             {STATUS_OPTIONS.map(o => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -126,12 +126,12 @@ export default function MySurveysView({
 
         {/* Sort */}
         <div className="relative">
-          <SortDesc size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <SortDesc size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none" />
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value)}
-            className="pl-8 pr-8 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-700
-                       focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer transition-shadow"
+            className="pl-8 pr-8 py-2 text-sm border border-outline-variant/20 rounded-lg bg-white text-on-surface-variant
+                       focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary appearance-none cursor-pointer transition-shadow"
           >
             <option value="updated">Más recientes</option>
             <option value="name">Nombre A–Z</option>
@@ -141,9 +141,9 @@ export default function MySurveysView({
       </div>
 
       {/* ── Table / Cards ── */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-sm overflow-hidden">
         {/* Table header (hidden on mobile) */}
-        <div className="hidden sm:grid grid-cols-[1fr_110px_110px_160px] gap-4 px-5 py-3 bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+        <div className="hidden sm:grid grid-cols-[1fr_110px_110px_160px] gap-4 px-5 py-3 bg-surface-container-low border-b border-outline-variant/10 text-xs font-semibold text-on-surface-variant uppercase tracking-wide">
           <span>Encuesta</span>
           <span className="text-center">Respuestas</span>
           <span className="text-center">Estado</span>
@@ -172,7 +172,7 @@ export default function MySurveysView({
 
         {/* Footer count */}
         {!loading && filtered.length > 0 && (
-          <div className="px-5 py-2.5 bg-slate-50 border-t border-slate-100 text-xs text-slate-400 text-right">
+          <div className="px-5 py-2.5 bg-surface-container-low border-t border-outline-variant/10 text-xs text-outline text-right">
             {filtered.length} de {surveys.length} encuestas
           </div>
         )}
@@ -187,7 +187,7 @@ export default function MySurveysView({
 
 function SummaryPill({ icon, label, value, color }) {
   const colors = {
-    blue:   'bg-blue-50   text-blue-700   border-blue-100',
+    blue:   'bg-primary-fixed/20   text-blue-700   border-blue-100',
     emerald:'bg-emerald-50 text-emerald-700 border-emerald-100',
     amber:  'bg-amber-50  text-amber-700  border-amber-100',
     violet: 'bg-violet-50 text-violet-700 border-violet-100',
@@ -207,21 +207,21 @@ function SurveyRow({ survey: s, onEdit, onArchive, onDelete, onViewAnalytics, on
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
-    <li className="group grid grid-cols-1 sm:grid-cols-[1fr_110px_110px_160px] gap-2 sm:gap-4 px-5 py-4 hover:bg-blue-50/40 transition-colors items-center">
+    <li className="group grid grid-cols-1 sm:grid-cols-[1fr_110px_110px_160px] gap-2 sm:gap-4 px-5 py-4 hover:bg-primary-fixed/20/40 transition-colors items-center">
 
       {/* Name + date */}
       <div className="min-w-0">
-        <p className="font-semibold text-slate-800 group-hover:text-blue-700 transition-colors truncate text-sm">
+        <p className="font-semibold text-on-surface group-hover:text-surface-tint transition-colors truncate text-sm">
           {s.name}
         </p>
-        <p className="text-xs text-slate-400 mt-0.5">
+        <p className="text-xs text-outline mt-0.5">
           {s.updatedAt ? `Actualizada ${fmtDate(s.updatedAt)}` : fmtDate(s.createdAt)}
         </p>
       </div>
 
       {/* Responses */}
       <div className="hidden sm:flex justify-center">
-        <span className="text-sm font-semibold text-slate-700">
+        <span className="text-sm font-semibold text-on-surface-variant">
           {(s.responses ?? 0).toLocaleString('es-MX')}
         </span>
       </div>
@@ -236,7 +236,7 @@ function SurveyRow({ survey: s, onEdit, onArchive, onDelete, onViewAnalytics, on
       {/* Mobile: responses + status inline */}
       <div className="sm:hidden flex items-center gap-2 flex-wrap">
         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${s.statusColor}`}>{s.status}</span>
-        <span className="text-xs text-slate-400">{s.responses ?? 0} resp.</span>
+        <span className="text-xs text-outline">{s.responses ?? 0} resp.</span>
       </div>
 
       {/* Actions */}
@@ -265,7 +265,7 @@ function SurveyRow({ survey: s, onEdit, onArchive, onDelete, onViewAnalytics, on
         <ActionBtn
           title="Editar"
           onClick={() => onEdit?.(s.id)}
-          colorClass="hover:text-blue-600 hover:bg-blue-50"
+          colorClass="hover:text-primary hover:bg-primary-fixed/20"
         >
           <Pencil size={15} />
         </ActionBtn>
@@ -314,7 +314,7 @@ function ActionBtn({ title, onClick, colorClass, children }) {
     <button
       title={title}
       onClick={e => { e.stopPropagation(); onClick(); }}
-      className={`p-1.5 rounded-md text-slate-400 transition-colors ${colorClass}`}
+      className={`p-1.5 rounded-md text-outline transition-colors ${colorClass}`}
     >
       {children}
     </button>
@@ -362,12 +362,12 @@ function LinkModal({ survey, onClose }) {
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
         {/* Header */}
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+        <div className="p-6 border-b border-outline-variant/10 flex items-center justify-between">
           <div>
-            <h2 className="font-bold text-slate-900">Enlace y código QR</h2>
-            <p className="text-slate-500 text-sm truncate max-w-[260px]">{survey.name}</p>
+            <h2 className="font-bold text-on-surface">Enlace y código QR</h2>
+            <p className="text-on-surface-variant text-sm truncate max-w-[260px]">{survey.name}</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors p-1">
+          <button onClick={onClose} className="text-outline hover:text-slate-600 transition-colors p-1">
             <X size={18} />
           </button>
         </div>
@@ -376,8 +376,8 @@ function LinkModal({ survey, onClose }) {
         <div className="p-6 space-y-5">
           {/* QR */}
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Código QR</p>
-            <div className="flex justify-center p-6 bg-slate-50 rounded-xl border border-slate-200">
+            <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3">Código QR</p>
+            <div className="flex justify-center p-6 bg-surface-container-low rounded-xl border border-outline-variant/20">
               <QRCodeCanvas
                 id="ms-qr-canvas"
                 value={url}
@@ -391,16 +391,16 @@ function LinkModal({ survey, onClose }) {
 
           {/* URL */}
           <div>
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Enlace directo</p>
+            <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Enlace directo</p>
             <div className="flex gap-2">
-              <div className="flex-1 flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2 bg-slate-50 min-w-0">
-                <Link size={13} className="text-slate-400 flex-shrink-0" />
-                <span className="text-sm text-slate-700 truncate font-mono">{url}</span>
+              <div className="flex-1 flex items-center gap-2 border border-outline-variant/20 rounded-lg px-3 py-2 bg-surface-container-low min-w-0">
+                <Link size={13} className="text-outline flex-shrink-0" />
+                <span className="text-sm text-on-surface-variant truncate font-mono">{url}</span>
               </div>
               <button
                 onClick={copy}
                 className={`px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all flex-shrink-0 ${
-                  copied ? 'bg-green-600 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'
+                  copied ? 'bg-green-600 text-white' : 'bg-primary text-on-primary hover:bg-surface-tint'
                 }`}
               >
                 {copied ? <Check size={14} /> : <Copy size={14} />}
@@ -413,7 +413,7 @@ function LinkModal({ survey, onClose }) {
           <div className="flex flex-col gap-2 pt-1">
             <button
               onClick={downloadQR}
-              className="w-full py-2.5 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-2.5 border border-slate-300 text-on-surface-variant rounded-lg text-sm font-medium hover:bg-surface-container-low transition-colors flex items-center justify-center gap-2"
             >
               <Download size={15} /> Descargar QR (.png)
             </button>
@@ -421,7 +421,7 @@ function LinkModal({ survey, onClose }) {
               href={url}
               target="_blank"
               rel="noreferrer"
-              className="w-full py-2.5 border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+              className="w-full py-2.5 border border-slate-300 text-on-surface-variant rounded-lg text-sm font-medium hover:bg-surface-container-low transition-colors flex items-center justify-center gap-2"
             >
               <ExternalLink size={15} /> Abrir enlace
             </a>
@@ -437,18 +437,18 @@ function EmptyState({ search, onNewSurvey }) {
     return (
       <div className="py-14 text-center">
         <Search size={36} className="mx-auto text-slate-200 mb-3" />
-        <p className="text-slate-500 text-sm font-medium">Sin resultados para "<span className="text-slate-700">{search}</span>"</p>
-        <p className="text-slate-400 text-xs mt-1">Intenta con otro término.</p>
+        <p className="text-on-surface-variant text-sm font-medium">Sin resultados para "<span className="text-on-surface-variant">{search}</span>"</p>
+        <p className="text-outline text-xs mt-1">Intenta con otro término.</p>
       </div>
     );
   }
   return (
     <div className="py-14 text-center">
       <PenTool size={36} className="mx-auto text-slate-200 mb-3" />
-      <p className="text-slate-500 text-sm font-medium">Aún no tienes encuestas</p>
+      <p className="text-on-surface-variant text-sm font-medium">Aún no tienes encuestas</p>
       <button
         onClick={onNewSurvey}
-        className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+        className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:text-surface-tint transition-colors"
       >
         <Plus size={15} /> Crear mi primera encuesta
       </button>

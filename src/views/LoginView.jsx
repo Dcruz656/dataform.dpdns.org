@@ -28,7 +28,7 @@ export default function LoginView() {
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
               <span className="material-symbols-outlined text-white text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>stacked_bar_chart</span>
             </div>
-            <span className="text-2xl font-bold text-primary tracking-tight">Survei</span>
+            <span className="text-2xl font-bold text-primary tracking-tight">DataForm</span>
           </div>
           <nav className="hidden md:flex items-center gap-8">
             <a className="text-sm font-semibold tracking-wide text-on-surface-variant hover:text-primary transition-colors" href="#caracteristicas">Características</a>
@@ -140,7 +140,7 @@ export default function LoginView() {
             <div className="text-center max-w-[600px] mx-auto mb-16">
               <h2 className="text-3xl font-bold text-on-surface mb-4">Todo lo que necesitas para entender a tu audiencia.</h2>
               <p className="text-base text-on-surface-variant">
-                Olvídate de las herramientas complejas. Survei unifica el diseño intuitivo con analíticas potentes para que te enfoques en los resultados.
+                Olvídate de las herramientas complejas. DataForm unifica el diseño intuitivo con analíticas potentes para que te enfoques en los resultados.
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ gridAutoRows: 'minmax(280px, auto)' }}>
@@ -227,7 +227,7 @@ export default function LoginView() {
                 <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                   <span className="material-symbols-outlined text-white text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>stacked_bar_chart</span>
                 </div>
-                <span className="text-2xl font-bold text-primary tracking-tight">Survei</span>
+                <span className="text-2xl font-bold text-primary tracking-tight">DataForm</span>
               </div>
               <p className="text-sm text-on-surface-variant max-w-[250px]">
                 Empoderando a equipos con datos claros y herramientas de investigación premium.
@@ -249,7 +249,7 @@ export default function LoginView() {
             ))}
           </div>
           <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-outline-variant/20 text-sm text-on-surface-variant">
-            <p>© 2025 Survei. Todos los derechos reservados.</p>
+            <p>© 2025 DataForm. Todos los derechos reservados.</p>
             <div className="flex gap-4 mt-4 md:mt-0">
               <a href="#" className="w-8 h-8 rounded-full bg-surface-container hover:bg-surface-container-high flex items-center justify-center transition-colors">
                 <span className="material-symbols-outlined text-[18px]">share</span>
