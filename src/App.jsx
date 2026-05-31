@@ -453,7 +453,7 @@ export default function App() {
         </header>
 
         <div className="flex-1 overflow-y-auto flex flex-col">
-          <div className="flex-1 p-4 md:p-8">
+          <div className="flex-1 p-4 md:p-8 pb-4">
             {activeTab === 'dashboard' && (
               <DashboardView
                 surveys={dashboardSurveys}
@@ -506,10 +506,35 @@ export default function App() {
             )}
             {activeTab === 'appearance' && <AppearanceView theme={theme} setTheme={setTheme} />}
           </div>
-          <footer className="px-4 md:px-8 py-4 border-t border-outline-variant/20 bg-surface-container-lowest text-center text-xs text-on-surface-variant flex-shrink-0">
+          <footer className="hidden md:block px-4 md:px-8 py-4 border-t border-surface-container-highest bg-surface-container-lowest text-center text-xs text-on-surface-variant flex-shrink-0">
             © 2025 DataForm. Daniel Cruz Bautista. Todos los derechos reservados.
           </footer>
         </div>
+
+        {/* Bottom Nav — mobile only */}
+        <nav className="md:hidden flex-shrink-0 bg-surface-container-lowest border-t border-surface-container-highest flex items-stretch safe-area-bottom">
+          {[
+            { tab: 'dashboard',  icon: <LayoutDashboard size={20} />, label: 'Panel' },
+            { tab: 'mysurveys',  icon: <ClipboardList size={20} />,   label: 'Encuestas' },
+            { tab: 'builder',    icon: <PenTool size={20} />,         label: 'Constructor' },
+            { tab: 'analytics',  icon: <BarChart3 size={20} />,       label: 'Analítica' },
+            { tab: 'appearance', icon: <Palette size={20} />,         label: 'Apariencia' },
+            { tab: 'archive',    icon: <Archive size={20} />,         label: 'Archivo' },
+          ].map(({ tab, icon, label }) => (
+            <button
+              key={tab}
+              onClick={() => navigate(tab)}
+              className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 px-1 text-[10px] font-semibold transition-colors ${
+                activeTab === tab
+                  ? 'text-primary'
+                  : 'text-on-surface-variant hover:text-primary'
+              }`}
+            >
+              <span className={`transition-transform ${activeTab === tab ? 'scale-110' : ''}`}>{icon}</span>
+              {label}
+            </button>
+          ))}
+        </nav>
       </main>
     </div>
   );
