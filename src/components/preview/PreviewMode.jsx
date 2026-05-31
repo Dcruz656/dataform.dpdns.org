@@ -141,7 +141,7 @@ function ClassicView({ surveyConfig, questions, answers, setAnswer, onSubmit }) 
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Sticky progress bar */}
       <div className="bg-white border-b border-slate-200 px-6 py-3 flex-shrink-0 sticky top-0 z-10 shadow-sm">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="flex justify-between items-center mb-1.5">
             <span className="text-xs font-semibold text-slate-500">
               {answered} de {total} {total === 1 ? 'pregunta respondida' : 'preguntas respondidas'}
@@ -158,7 +158,7 @@ function ClassicView({ surveyConfig, questions, answers, setAnswer, onSubmit }) 
       </div>
 
       <div className="flex-1 flex justify-center p-6 overflow-y-auto">
-        <div className="max-w-2xl w-full bg-white p-10 rounded-lg shadow-sm border border-slate-200 my-6">
+        <div className="max-w-4xl w-full bg-white p-10 rounded-lg shadow-sm border border-slate-200 my-6">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">{surveyConfig.title}</h1>
           <p className="text-slate-500 mb-10 text-base">{surveyConfig.instructions}</p>
 
@@ -291,7 +291,7 @@ function ConversationalView({ surveyConfig, questions, answers, setAnswer, onSub
         <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${progress}%` }} />
       </div>
       <div className="flex-1 flex items-center justify-center p-6">
-        <div className="max-w-xl w-full">
+        <div className="max-w-2xl w-full">
           {isNameScreen ? (
             <div key="name" className="animate-slide-in">
               <p className="text-blue-600 font-bold text-sm uppercase tracking-wider mb-3">{surveyConfig.title}</p>
