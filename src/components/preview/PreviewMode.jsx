@@ -473,16 +473,16 @@ function Matrix({ question, answer = {}, onAnswer }) {
             {question.columns?.map((col, ci) => {
               const color = colors[ci];
               return (
-                <th key={col} className="text-center pb-3 px-2 whitespace-nowrap">
+                <th key={col} className="text-center pb-3 px-2 align-bottom" style={{ maxWidth: 90 }}>
                   {color ? (
                     <span
-                      className="inline-flex items-center justify-center px-2 py-1 rounded text-white text-xs font-bold min-w-[2rem]"
+                      className="block w-full px-1.5 py-1.5 rounded text-white text-xs font-bold leading-tight text-center break-words"
                       style={{ backgroundColor: color }}
                     >
                       {col}
                     </span>
                   ) : (
-                    <span className="text-slate-600 font-semibold text-xs">{col}</span>
+                    <span className="block text-slate-600 font-semibold text-xs leading-tight break-words">{col}</span>
                   )}
                 </th>
               );

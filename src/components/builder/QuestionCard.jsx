@@ -534,11 +534,10 @@ function TypeConfig({ question, onUpdate }) {
               {question.columns?.map((col, i) => {
                 const color = (question.columnColors || [])[i] || '#e2e8f0';
                 return (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                    <div className="w-full h-6 rounded flex items-center justify-center text-white text-[10px] font-bold shadow-sm" style={{ backgroundColor: color }}>
-                      {col.length <= 3 ? col : i + 1}
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1" style={{ minWidth: 0 }}>
+                    <div className="w-full rounded flex items-center justify-center text-white text-[10px] font-bold shadow-sm text-center px-1 py-1.5 leading-tight break-words" style={{ backgroundColor: color }}>
+                      {col}
                     </div>
-                    <span className="text-[9px] text-slate-400 text-center leading-tight truncate w-full text-center">{col.slice(0, 12)}</span>
                   </div>
                 );
               })}
