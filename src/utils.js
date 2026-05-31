@@ -1,4 +1,5 @@
 export function shouldShowQuestion(question, answers) {
+  if (question.type === 'section') return true; // sections always show, handled separately
   if (!question.conditions || question.conditions.length === 0) return true;
   const match = question.conditions.every(cond => {
     const answer = answers[cond.sourceId];

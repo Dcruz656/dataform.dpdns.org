@@ -7,21 +7,61 @@ import {
   useSortable, arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Play, LayoutDashboard, ChevronRight, Library, BookMarked, X, Trash2 } from 'lucide-react';
+import { Play, LayoutDashboard, ChevronRight, Library, BookMarked, X, Trash2, Rows3 } from 'lucide-react';
 import { QUESTION_TYPES, createNewQuestion } from '../../constants';
 import { nextId } from '../../utils';
 import WelcomeCard from './WelcomeCard';
 import QuestionCard from './QuestionCard';
 import PublishModal from './PublishModal';
 
-function SortableItem({ question, ...props }) {
+function SortableItem({ question, onDelete, onUpdate, ...props }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: question.id });
   return (
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.45 : 1 }}
     >
-      <QuestionCard question={question} dragHandleProps={{ ...attributes, ...listeners }} {...props} />
+      {question.type === 'section'
+        ? <SectionCard section={question} onDelete={onDelete} onUpdate={onUpdate} dragHandleProps={{ ...attributes, ...listeners }} />
+        : <QuestionCard question={question} onDelete={onDelete} onUpdate={onUpdate} dragHandleProps={{ ...attributes, ...listeners }} {...props} />
+      }
+    </div>
+  );
+}
+
+function SectionCard({ section, onDelete, onUpdate, dragHandleProps }) {
+  return (
+    <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-sm overflow-hidden">
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-blue-500/40">
+        <div {...dragHandleProps} className="cursor-grab text-blue-200 hover:text-white transition-colors p-1 -ml-1">
+          <Rows3 size={14} />
+        </div>
+        <Rows3 size={14} className="text-blue-200" />
+        <span className="text-xs font-bold text-blue-100 uppercase tracking-wider">Sección</span>
+        <button
+          onClick={() => onDelete(section.id)}
+          className="ml-auto text-blue-300 hover:text-white transition-colors p-1"
+          title="Eliminar sección"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+      <div className="px-4 py-3 space-y-2">
+        <input
+          type="text"
+          value={section.title || ''}
+          onChange={e => onUpdate({ ...section, title: e.target.value })}
+          placeholder="Título de la sección..."
+          className="w-full bg-white/15 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-blue-200 text-sm font-semibold outline-none focus:bg-white/25 focus:border-white/40 transition-all"
+        />
+        <textarea
+          value={section.instructions || ''}
+          onChange={e => onUpdate({ ...section, instructions: e.target.value })}
+          placeholder="Instrucciones o descripción de esta sección (opcional)..."
+          rows={2}
+          className="w-full bg-white/15 border border-white/20 rounded-lg px-3 py-2 text-white placeholder-blue-200 text-sm outline-none focus:bg-white/25 focus:border-white/40 transition-all resize-none"
+        />
+      </div>
     </div>
   );
 }
@@ -64,6 +104,10 @@ export default function BuilderView({
   const addQuestion = type => {
     setQuestions(qs => [...qs, createNewQuestion(type, nextId())]);
     setShowTypeSelector(false);
+  };
+  const addSection = () => {
+    const n = questions.filter(q => q.type === 'section').length + 1;
+    setQuestions(qs => [...qs, { id: nextId(), type: 'section', title: `Sección ${n}`, instructions: '' }]);
   };
 
   // Bank filtering
@@ -186,12 +230,20 @@ export default function BuilderView({
                 </div>
               </div>
             ) : (
-              <button
-                onClick={() => setShowTypeSelector(true)}
-                className="w-full py-4 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 font-semibold hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all"
-              >
-                + Añadir Nueva Pregunta
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowTypeSelector(true)}
+                  className="flex-1 py-4 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 font-semibold hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all text-sm"
+                >
+                  + Añadir Pregunta
+                </button>
+                <button
+                  onClick={addSection}
+                  className="flex items-center gap-2 px-5 py-4 border-2 border-dashed border-blue-200 rounded-lg text-blue-500 font-semibold hover:border-blue-500 hover:bg-blue-50 transition-all text-sm"
+                >
+                  <Rows3 size={15} /> Añadir Sección
+                </button>
+              </div>
             )}
           </div>
         </div>

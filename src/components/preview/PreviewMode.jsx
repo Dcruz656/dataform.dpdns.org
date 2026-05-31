@@ -116,9 +116,10 @@ export default function PreviewMode({ surveyConfig, questions, surveyId, onClose
 function ClassicView({ surveyConfig, questions, answers, setAnswer, onSubmit }) {
   const [name, setName] = useState('');
   const visible = questions.filter(q => shouldShowQuestion(q, answers));
+  const visibleQuestions = visible.filter(q => q.type !== 'section');
 
-  const answered = visible.filter(q => answers[q.id] !== undefined && answers[q.id] !== '').length;
-  const total = visible.length;
+  const answered = visibleQuestions.filter(q => answers[q.id] !== undefined && answers[q.id] !== '').length;
+  const total = visibleQuestions.length;
   const pct = total === 0 ? 0 : Math.round((answered / total) * 100);
 
   // Save partial state to localStorage when leaving without submitting
@@ -175,16 +176,32 @@ function ClassicView({ surveyConfig, questions, answers, setAnswer, onSubmit }) 
           )}
 
           <div className="space-y-12">
-            {visible.map((q, i) => (
-              <div key={q.id}>
-                <h3 className="font-semibold text-xl mb-5 text-slate-800">
-                  <span className="text-blue-600 mr-2">{i + 1}.</span>
-                  {applyPiping(q.text, answers, questions, name)}
-                  {q.required && <span className="text-red-500 ml-1">*</span>}
-                </h3>
-                <QuestionRenderer question={q} answer={answers[q.id]} onAnswer={val => setAnswer(q.id, val)} />
-              </div>
-            ))}
+            {(() => {
+              let qNum = 0;
+              return visible.map(q => {
+                if (q.type === 'section') {
+                  return (
+                    <div key={q.id} className="border-t-2 border-blue-100 pt-8 -mx-10 px-10">
+                      <div className="inline-block bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full mb-3 uppercase tracking-wider">
+                        {q.title || 'Sección'}
+                      </div>
+                      {q.instructions && <p className="text-slate-500 text-sm">{q.instructions}</p>}
+                    </div>
+                  );
+                }
+                qNum++;
+                return (
+                  <div key={q.id}>
+                    <h3 className="font-semibold text-xl mb-5 text-slate-800">
+                      <span className="text-blue-600 mr-2">{qNum}.</span>
+                      {applyPiping(q.text, answers, questions, name)}
+                      {q.required && <span className="text-red-500 ml-1">*</span>}
+                    </h3>
+                    <QuestionRenderer question={q} answer={answers[q.id]} onAnswer={val => setAnswer(q.id, val)} />
+                  </div>
+                );
+              });
+            })()}
           </div>
 
           <button
@@ -211,7 +228,10 @@ function ConversationalView({ surveyConfig, questions, answers, setAnswer, onSub
   const safeIdx = Math.min(currentIdx, visible.length - 1);
   const isNameScreen = currentIdx === -1;
   const current = visible[safeIdx];
-  const progress = isNameScreen ? 0 : ((safeIdx + 1) / visible.length) * 100;
+  const isSection = current?.type === 'section';
+  const visibleQOnly = visible.filter(q => q.type !== 'section');
+  const answeredSoFar = visibleQOnly.slice(0, safeIdx + 1).filter(q => answers[q.id] !== undefined).length;
+  const progress = isNameScreen ? 0 : (visibleQOnly.length ? (answeredSoFar / visibleQOnly.length) * 100 : 0);
   const isLast = safeIdx === visible.length - 1;
 
   // Save partial state to localStorage on page close
@@ -262,7 +282,7 @@ function ConversationalView({ surveyConfig, questions, answers, setAnswer, onSub
 
   const canAdvance = isNameScreen
     ? !surveyConfig.requireName || name.trim().length > 0
-    : !current?.required || (localAnswer !== null ? localAnswer !== '' : answers[current?.id] !== undefined);
+    : isSection || !current?.required || (localAnswer !== null ? localAnswer !== '' : answers[current?.id] !== undefined);
 
   return (
     <div className="flex-1 flex flex-col">
@@ -287,9 +307,20 @@ function ConversationalView({ surveyConfig, questions, answers, setAnswer, onSub
                 autoFocus
               />
             </div>
+          ) : current && isSection ? (
+            <div key={current.id} className="animate-slide-in text-center">
+              <div className="inline-block bg-blue-600 text-white text-xs font-bold px-4 py-1.5 rounded-full mb-5 uppercase tracking-wider">
+                {current.title || 'Nueva Sección'}
+              </div>
+              {current.instructions && (
+                <p className="text-slate-500 text-base">{current.instructions}</p>
+              )}
+            </div>
           ) : current ? (
             <div key={current.id} className="animate-slide-in">
-              <p className="text-slate-400 text-sm font-medium mb-3">{safeIdx + 1} / {visible.length}</p>
+              <p className="text-slate-400 text-sm font-medium mb-3">
+                {visibleQOnly.findIndex(q => q.id === current.id) + 1} / {visibleQOnly.length}
+              </p>
               <h2 className="text-2xl font-bold text-slate-900 mb-8">
                 {applyPiping(current.text, answers, questions, name)}
                 {current.required && <span className="text-red-500 ml-1">*</span>}

@@ -557,7 +557,21 @@ export default function AnalyticsView({ surveys = [], initialSurveyId }) {
       {!loading && !error && totalResps > 0 && questions.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-lg font-bold text-slate-900">Resultados por pregunta</h2>
-          {questions.map((q, i) => <QuestionCard key={q.id} question={q} responses={responses} index={i} />)}
+          {(() => {
+            let qNum = 0;
+            return questions.map(q => {
+              if (q.type === 'section') {
+                return (
+                  <div key={q.id} className="flex items-center gap-3 pt-2">
+                    <div className="h-px flex-1 bg-slate-200" />
+                    <span className="text-xs font-bold text-blue-600 uppercase tracking-wider px-2">{q.title || 'Sección'}</span>
+                    <div className="h-px flex-1 bg-slate-200" />
+                  </div>
+                );
+              }
+              return <QuestionCard key={q.id} question={q} responses={responses} index={qNum++} />;
+            });
+          })()}
         </div>
       )}
 
