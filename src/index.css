@@ -3,6 +3,8 @@
 @tailwind utilities;
 
 .ambient-shadow { box-shadow: 0px 4px 20px rgba(49,46,129,0.04); }
+.interactive-shadow { transition: box-shadow 0.3s ease, transform 0.3s ease; }
+.interactive-shadow:hover { box-shadow: 0 8px 30px rgba(49,46,129,0.10); transform: translateY(-2px); }
 .deep-shadow    { box-shadow: 0px 10px 40px rgba(49,46,129,0.1); }
 .glass-panel {
   background: rgba(255,255,255,0.7);
