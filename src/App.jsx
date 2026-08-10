@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, PenTool, BarChart3, Palette, Archive, Menu, X, LogOut, ClipboardList, Bell, HelpCircle, Search, Shield, Settings } from 'lucide-react';
+import { LayoutDashboard, PenTool, BarChart3, Palette, Archive, Menu, X, LogOut, ClipboardList, Bell, HelpCircle, Search, Shield, Settings, BookOpen } from 'lucide-react';
 import { DEFAULT_QUESTIONS } from './constants';
 import NavItem from './components/NavItem';
 import BuilderView from './components/builder/BuilderView';
@@ -471,7 +471,15 @@ export default function App() {
         )}
 
         {/* Footer */}
-        <div className="p-4 border-t border-surface-container-highest">
+        <div className="p-4 border-t border-surface-container-highest space-y-1">
+          <a
+            href="/manual.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-primary hover:bg-surface-container-high hover:translate-x-1 transition-all duration-200"
+          >
+            <BookOpen size={18} /> Manual de uso
+          </a>
           <button
             onClick={signOut}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-error hover:bg-error-container transition-all duration-200"
@@ -502,9 +510,15 @@ export default function App() {
             <button className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-95">
               <Bell size={18} />
             </button>
-            <button className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-95">
+            <a
+              href="/manual.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors active:scale-95"
+              title="Manual de uso"
+            >
               <HelpCircle size={18} />
-            </button>
+            </a>
             <div className="w-8 h-8 ml-2 rounded-full overflow-hidden border-2 border-surface-container-highest flex-shrink-0">
               {user.user_metadata?.avatar_url
                 ? <img src={user.user_metadata.avatar_url} alt="" className="w-full h-full object-cover" />

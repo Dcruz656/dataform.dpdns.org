@@ -1,0 +1,1248 @@
+
+<title>Manual de Usuario — DataForm</title>
+<style>
+/* ── Tokens ───────────────────────────────────────────────────────── */
+:root {
+  --brand:       #1f108e;
+  --accent:      #2563eb;
+  --accent-soft: #dbeafe;
+  --success:     #059669;
+  --success-soft:#d1fae5;
+  --warn:        #d97706;
+  --warn-soft:   #fef3c7;
+  --new-soft:    #ede9fe;
+  --new:         #7c3aed;
+
+  --ink:         #0f172a;
+  --ink-soft:    #475569;
+  --ink-faint:   #94a3b8;
+  --surface:     #ffffff;
+  --surface-2:   #f8fafc;
+  --surface-3:   #f1f5f9;
+  --border:      #e2e8f0;
+  --border-soft: #f1f5f9;
+  --sidebar-w:   260px;
+  --content-max: 740px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --brand:       #818cf8;
+    --accent:      #60a5fa;
+    --accent-soft: #1e3a5f;
+    --success:     #34d399;
+    --success-soft:#064e3b;
+    --warn:        #fbbf24;
+    --warn-soft:   #451a03;
+    --new-soft:    #2e1065;
+    --new:         #c4b5fd;
+    --ink:         #f1f5f9;
+    --ink-soft:    #94a3b8;
+    --ink-faint:   #475569;
+    --surface:     #0f172a;
+    --surface-2:   #1e293b;
+    --surface-3:   #263347;
+    --border:      #1e293b;
+    --border-soft: #263347;
+  }
+}
+:root[data-theme="dark"] {
+  --brand:       #818cf8;
+  --accent:      #60a5fa;
+  --accent-soft: #1e3a5f;
+  --success:     #34d399;
+  --success-soft:#064e3b;
+  --warn:        #fbbf24;
+  --warn-soft:   #451a03;
+  --new-soft:    #2e1065;
+  --new:         #c4b5fd;
+  --ink:         #f1f5f9;
+  --ink-soft:    #94a3b8;
+  --ink-faint:   #475569;
+  --surface:     #0f172a;
+  --surface-2:   #1e293b;
+  --surface-3:   #263347;
+  --border:      #1e293b;
+  --border-soft: #263347;
+}
+
+/* ── Reset ────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+img, svg { max-width: 100%; }
+
+/* ── Layout ───────────────────────────────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────── */
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--surface-2);
+  border-right: 1px solid var(--border);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-header {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.brand-icon {
+  width: 32px; height: 32px;
+  background: var(--brand);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.brand-icon svg { width: 16px; height: 16px; fill: white; }
+.brand-name {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--brand);
+  letter-spacing: -0.02em;
+}
+.brand-sub {
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  margin-left: 42px;
+  margin-top: -2px;
+}
+.nav { flex: 1; padding: 12px 10px 24px; overflow-y: auto; }
+.nav-section {
+  margin-bottom: 16px;
+}
+.nav-section-label {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+  padding: 0 10px;
+  margin-bottom: 4px;
+  display: block;
+}
+.nav a {
+  display: block;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+  font-weight: 500;
+  transition: background 0.12s, color 0.12s;
+  text-decoration: none;
+  line-height: 1.4;
+}
+.nav a:hover { background: var(--surface-3); color: var(--ink); }
+.nav a.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+/* ── Main content ─────────────────────────────────────────────────── */
+.main {
+  padding: 48px 48px 96px;
+  max-width: calc(var(--content-max) + 96px);
+}
+.content { max-width: var(--content-max); }
+
+/* ── Typography ───────────────────────────────────────────────────── */
+.page-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--brand);
+  margin-bottom: 8px;
+}
+.page-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--ink);
+  text-wrap: balance;
+  margin-bottom: 12px;
+}
+.page-lead {
+  font-size: 1.0625rem;
+  color: var(--ink-soft);
+  line-height: 1.65;
+  margin-bottom: 40px;
+  max-width: 600px;
+}
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 40px 0;
+}
+section { scroll-margin-top: 24px; }
+.section-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  text-wrap: balance;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.section-lead {
+  color: var(--ink-soft);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 6px;
+  margin-top: 24px;
+  letter-spacing: -0.01em;
+}
+p { color: var(--ink-soft); line-height: 1.65; margin-bottom: 12px; font-size: 0.9375rem; }
+p:last-child { margin-bottom: 0; }
+ul, ol { color: var(--ink-soft); font-size: 0.9375rem; line-height: 1.65; padding-left: 20px; margin-bottom: 12px; }
+li { margin-bottom: 4px; }
+li:last-child { margin-bottom: 0; }
+strong { color: var(--ink); font-weight: 600; }
+code {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 0.8125rem;
+  background: var(--surface-3);
+  color: var(--accent);
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+pre {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  margin: 16px 0;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+pre code { background: none; border: none; padding: 0; color: inherit; }
+
+/* ── Badges ───────────────────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+.badge-new { background: var(--new-soft); color: var(--new); }
+.badge-adv { background: var(--accent-soft); color: var(--accent); }
+.badge-tip { background: var(--success-soft); color: var(--success); }
+
+/* ── Callouts ─────────────────────────────────────────────────────── */
+.callout {
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 20px 0;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+.callout-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+.callout-body { color: var(--ink-soft); }
+.callout-body strong { color: var(--ink); }
+.callout-tip  { background: var(--success-soft); border-left: 3px solid var(--success); }
+.callout-note { background: var(--accent-soft);  border-left: 3px solid var(--accent); }
+.callout-warn { background: var(--warn-soft);    border-left: 3px solid var(--warn); }
+.callout-new  { background: var(--new-soft);     border-left: 3px solid var(--new); }
+
+/* ── Feature grid ─────────────────────────────────────────────────── */
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.feat-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.feat-card-icon { font-size: 1.25rem; margin-bottom: 6px; }
+.feat-card-title { font-size: 0.875rem; font-weight: 700; color: var(--ink); margin-bottom: 3px; }
+.feat-card-desc  { font-size: 0.8rem; color: var(--ink-soft); line-height: 1.4; }
+
+/* ── Steps ────────────────────────────────────────────────────────── */
+.steps { margin: 20px 0; display: flex; flex-direction: column; gap: 0; }
+.step  {
+  display: flex;
+  gap: 16px;
+  padding-bottom: 24px;
+  position: relative;
+}
+.step::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 32px;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+.step:last-child::before { display: none; }
+.step:last-child { padding-bottom: 0; }
+.step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: white;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+.step-body { flex: 1; padding-top: 5px; }
+.step-title { font-size: 0.9375rem; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+.step-desc  { font-size: 0.875rem; color: var(--ink-soft); line-height: 1.6; }
+
+/* ── Table ────────────────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; margin: 16px 0; border-radius: 10px; border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+th {
+  text-align: left;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 10px 14px;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--border-soft);
+  vertical-align: top;
+  line-height: 1.5;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface-2); }
+td strong { color: var(--ink); font-weight: 600; }
+td code { font-size: 0.75rem; }
+
+/* ── Q-type chips ─────────────────────────────────────────────────── */
+.chip-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+.chip-emoji { font-size: 1rem; }
+
+/* ── Key-value list ───────────────────────────────────────────────── */
+.kv { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 16px 0; }
+.kv-row { display: flex; gap: 0; border-bottom: 1px solid var(--border-soft); }
+.kv-row:last-child { border-bottom: none; }
+.kv-key {
+  width: 160px;
+  flex-shrink: 0;
+  background: var(--surface-2);
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink);
+  border-right: 1px solid var(--border);
+}
+.kv-val {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .sidebar { position: relative; height: auto; border-right: none; border-bottom: 1px solid var(--border); }
+  .nav { display: none; }
+  .main { padding: 32px 24px 64px; }
+}
+@media (max-width: 500px) {
+  .main { padding: 24px 16px 48px; }
+  .page-title { font-size: 1.75rem; }
+  .feat-grid { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand-mark">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24"><path d="M3 3h18v4H3V3zm0 6h12v4H3V9zm0 6h18v4H3v-4z"/></svg>
+        </div>
+        <span class="brand-name">DataForm</span>
+      </div>
+      <div class="brand-sub">Manual de Usuario · v2.0</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">
+        <span class="nav-section-label">Primeros pasos</span>
+        <a href="#intro">Introducción</a>
+        <a href="#crear">Crear una encuesta</a>
+        <a href="#preguntas">Tipos de pregunta</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Configuración</span>
+        <a href="#config-basica">Configuración básica</a>
+        <a href="#tiempo-limite">Tiempo límite</a>
+        <a href="#puntajes">Puntajes y quiz</a>
+        <a href="#avanzado">Configuración avanzada</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Funciones pro</span>
+        <a href="#logica">Lógica condicional</a>
+        <a href="#piping">Variables en preguntas</a>
+        <a href="#webhook">Webhook</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Publicar</span>
+        <a href="#publicar">Publicar y compartir</a>
+        <a href="#embed">Código de embed</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Analítica</span>
+        <a href="#analitica">Ver resultados</a>
+        <a href="#abandono">Abandono y tiempos</a>
+        <a href="#exportar">Exportar datos</a>
+        <a href="#ia">Análisis con IA</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-label">Más</span>
+        <a href="#banco">Banco de preguntas</a>
+        <a href="#admin">Panel de admin</a>
+        <a href="#settings">Configuración</a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="content">
+
+      <!-- Page header -->
+      <div class="page-eyebrow">Documentación oficial</div>
+      <h1 class="page-title">Manual de Usuario DataForm</h1>
+      <p class="page-lead">Todo lo que necesitas para crear, publicar y analizar encuestas profesionales. Desde tu primera pregunta hasta webhooks y análisis con inteligencia artificial.</p>
+      <hr class="divider">
+
+      <!-- ── INTRO ── -->
+      <section id="intro">
+        <div class="section-title">👋 Introducción</div>
+        <p class="section-lead">DataForm es una plataforma de encuestas diseñada para recopilar respuestas de forma eficiente y analizar los resultados con profundidad.</p>
+
+        <div class="feat-grid">
+          <div class="feat-card">
+            <div class="feat-card-icon">📋</div>
+            <div class="feat-card-title">Constructor visual</div>
+            <div class="feat-card-desc">Arrastra, ordena y configura preguntas de 9 tipos distintos</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-card-icon">💬</div>
+            <div class="feat-card-title">Modo conversacional</div>
+            <div class="feat-card-desc">Encuestas Typeform-style, una pregunta a la vez</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-card-icon">🔀</div>
+            <div class="feat-card-title">Lógica condicional</div>
+            <div class="feat-card-desc">Muestra u oculta preguntas según las respuestas</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-card-icon">📊</div>
+            <div class="feat-card-title">Analítica avanzada</div>
+            <div class="feat-card-desc">Gráficas, NPS, funnel de abandono y tiempos</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-card-icon">🤖</div>
+            <div class="feat-card-title">Análisis con IA</div>
+            <div class="feat-card-desc">Anthropic, OpenAI, Google Gemini o Groq — con tu propia key</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-card-icon">🔗</div>
+            <div class="feat-card-title">Webhooks</div>
+            <div class="feat-card-desc">Conecta con Make, Zapier o tu propio sistema</div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── CREAR ── -->
+      <section id="crear">
+        <div class="section-title">✏️ Crear una encuesta</div>
+        <p class="section-lead">Empieza con el botón <strong>Nueva Encuesta</strong> en la barra lateral. Tu encuesta se guarda automáticamente cada vez que haces un cambio.</p>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <div class="step-title">Haz clic en "Nueva Encuesta"</div>
+              <div class="step-desc">En el panel izquierdo encontrarás el botón azul en la parte superior. Esto abre el Constructor con una encuesta en blanco.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <div class="step-title">Escribe el título e instrucciones</div>
+              <div class="step-desc">En la tarjeta de bienvenida edita el título (aparece grande al inicio de tu encuesta) y las instrucciones (texto descriptivo debajo del título).</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <div class="step-title">Agrega preguntas</div>
+              <div class="step-desc">Usa el selector de tipo de pregunta en la parte inferior del constructor. Puedes arrastrar las preguntas para reordenarlas.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <div class="step-title">Configura y publica</div>
+              <div class="step-desc">Ajusta la configuración en el panel lateral y luego haz clic en <strong>Publicar</strong> para generar el enlace público y el código QR.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">💾</span>
+          <div class="callout-body"><strong>Auto-guardado:</strong> DataForm guarda automáticamente cada 1.5 segundos después de tu último cambio. El indicador en la barra superior muestra el estado: <em>Guardando…</em>, <em>Guardado</em> o <em>Error</em>.</div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── PREGUNTAS ── -->
+      <section id="preguntas">
+        <div class="section-title">❓ Tipos de pregunta</div>
+        <p class="section-lead">DataForm incluye 9 tipos de pregunta para capturar cualquier tipo de dato.</p>
+
+        <div class="chip-grid">
+          <div class="chip"><span class="chip-emoji">☑️</span> Opción múltiple</div>
+          <div class="chip"><span class="chip-emoji">💬</span> Texto abierto</div>
+          <div class="chip"><span class="chip-emoji">⭐</span> Calificación</div>
+          <div class="chip"><span class="chip-emoji">📈</span> NPS</div>
+          <div class="chip"><span class="chip-emoji">↔️</span> Escala (slider)</div>
+          <div class="chip"><span class="chip-emoji">📊</span> Matriz</div>
+          <div class="chip"><span class="chip-emoji">🏆</span> Ranking</div>
+          <div class="chip"><span class="chip-emoji">📎</span> Carga de archivo</div>
+          <div class="chip"><span class="chip-emoji">📂</span> Sección</div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Cuándo usarlo</th>
+                <th>Dato que guarda</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Opción múltiple</strong></td>
+                <td>Elegir entre alternativas cerradas</td>
+                <td>Texto de la opción seleccionada</td>
+              </tr>
+              <tr>
+                <td><strong>Texto abierto</strong></td>
+                <td>Respuestas libres, comentarios, sugerencias</td>
+                <td>Texto libre (compatible con análisis IA)</td>
+              </tr>
+              <tr>
+                <td><strong>Calificación ⭐</strong></td>
+                <td>Satisfacción, calidad de servicio</td>
+                <td>Número de 1 a N estrellas</td>
+              </tr>
+              <tr>
+                <td><strong>NPS</strong></td>
+                <td>Net Promoter Score estándar</td>
+                <td>Número 0–10, calcula NPS automáticamente</td>
+              </tr>
+              <tr>
+                <td><strong>Escala</strong></td>
+                <td>Rangos numéricos personalizados</td>
+                <td>Número en el rango configurado</td>
+              </tr>
+              <tr>
+                <td><strong>Matriz</strong></td>
+                <td>Evaluar múltiples ítems en las mismas columnas</td>
+                <td>Objeto <code>{fila: columna}</code></td>
+              </tr>
+              <tr>
+                <td><strong>Ranking</strong></td>
+                <td>Ordenar opciones por preferencia</td>
+                <td>Array con el orden elegido</td>
+              </tr>
+              <tr>
+                <td><strong>Carga de archivo</strong></td>
+                <td>Documentos, imágenes adjuntas</td>
+                <td>Nombre del archivo</td>
+              </tr>
+              <tr>
+                <td><strong>Sección</strong></td>
+                <td>Separar bloques temáticos visualmente</td>
+                <td>No guarda respuesta</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── CONFIG BÁSICA ── -->
+      <section id="config-basica">
+        <div class="section-title">⚙️ Configuración básica</div>
+        <p class="section-lead">Cuando estás en el Constructor, el panel lateral izquierdo muestra las opciones de configuración de tu encuesta.</p>
+
+        <div class="kv">
+          <div class="kv-row">
+            <div class="kv-key">Solicitar nombre</div>
+            <div class="kv-val">Muestra una pantalla inicial pidiendo el nombre completo del respondente. Ese nombre queda guardado con cada respuesta y está disponible como variable <code>{{nombre}}</code> en las preguntas.</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">Modo conversacional</div>
+            <div class="kv-val">Presenta las preguntas de una en una, estilo Typeform. Incluye botones de Continuar, Atrás y Omitir. Activa el registro de tiempos por pregunta para la analítica de abandono.</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">Tiempo límite</div>
+            <div class="kv-val">Habilita las fechas de inicio y cierre. La encuesta solo estará disponible en ese rango. Fuera de él, los respondentes verán un mensaje de "Todavía no disponible" o "Encuesta cerrada".</div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── TIEMPO LÍMITE ── -->
+      <section id="tiempo-limite">
+        <div class="section-title">📅 Tiempo límite <span class="badge badge-new">Nuevo</span></div>
+        <p class="section-lead">Controla cuándo está disponible tu encuesta con fechas de inicio y cierre.</p>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <div class="step-title">Activa "Tiempo Límite"</div>
+              <div class="step-desc">En el panel de configuración del Constructor, activa el toggle <strong>Tiempo Límite</strong>. Aparecerán dos campos de fecha.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <div class="step-title">Elige las fechas</div>
+              <div class="step-desc">Configura la <strong>Fecha de inicio</strong> y la <strong>Fecha límite</strong>. Puedes dejar una de las dos vacía si solo quieres poner una restricción en un extremo.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <div class="step-title">La encuesta se bloquea automáticamente</div>
+              <div class="step-desc">Si alguien intenta acceder antes del inicio, verá: <em>"Todavía no disponible — abrirá el [fecha]"</em>. Si accede después del cierre: <em>"Encuesta cerrada"</em>.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-note">
+          <span class="callout-icon">ℹ️</span>
+          <div class="callout-body">El tiempo límite solo aplica para los respondentes en el enlace público. Desde el panel de administración siempre puedes ver y editar la encuesta.</div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── PUNTAJES ── -->
+      <section id="puntajes">
+        <div class="section-title">🏆 Puntajes y modo quiz</div>
+        <p class="section-lead">Asigna puntos a las respuestas y define rangos para mostrar un resultado personalizado al finalizar.</p>
+
+        <h3>Cómo configurar puntajes</h3>
+        <p>En el panel lateral del Constructor, sección <strong>Puntaje</strong>, haz clic en <strong>+ Rango</strong> para agregar un rango de resultado:</p>
+
+        <div class="kv">
+          <div class="kv-row">
+            <div class="kv-key">Mínimo / Máximo</div>
+            <div class="kv-val">El rango de puntaje que activa este resultado. Ejemplo: 0–40, 41–70, 71–100.</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">Título</div>
+            <div class="kv-val">Texto principal que verá el respondente. Ej: "Experto", "En progreso", "Iniciante".</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">Descripción</div>
+            <div class="kv-val">Explicación o feedback personalizado para ese rango.</div>
+          </div>
+        </div>
+
+        <h3>Cómo asignar puntos a preguntas</h3>
+        <p>En cada pregunta de tipo <strong>Opción múltiple</strong>, <strong>Calificación</strong> o <strong>NPS</strong>, abre el panel de configuración de la pregunta y asigna un puntaje a cada opción o valor.</p>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">💡</span>
+          <div class="callout-body">Si defines al menos un rango de puntaje, al finalizar la encuesta el respondente verá su puntaje total y el resultado que le corresponde en lugar de la pantalla genérica de "Gracias".</div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── AVANZADO ── -->
+      <section id="avanzado">
+        <div class="section-title">🛠️ Configuración avanzada <span class="badge badge-new">Nuevo</span></div>
+        <p class="section-lead">En el panel lateral del Constructor, debajo de la sección de puntajes, encontrarás la sección <strong>Avanzado</strong> con cuatro campos adicionales.</p>
+
+        <div class="kv">
+          <div class="kv-row">
+            <div class="kv-key">Límite de respuestas</div>
+            <div class="kv-val">Número máximo de respuestas que acepta la encuesta. Cuando se alcanza ese número, los nuevos visitantes ven un mensaje de "Cupo lleno". Pon <code>0</code> para sin límite.</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">Mensaje de gracias</div>
+            <div class="kv-val">Texto que aparece en la pantalla final después de enviar. Si lo dejas vacío, se muestra el mensaje por defecto: <em>"¡Gracias por tu respuesta!"</em></div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">URL de redirección</div>
+            <div class="kv-val">Si configuras una URL (ej. <code>https://tu-sitio.com/gracias</code>), el respondente será redirigido automáticamente a esa página 3.5 segundos después de enviar su respuesta.</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">Webhook URL</div>
+            <div class="kv-val">Cuando alguien envía una respuesta, DataForm hace un POST automático a esta URL con los datos en formato JSON. Úsalo para conectar con Make, Zapier, n8n o tu propio sistema.</div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── LÓGICA ── -->
+      <section id="logica">
+        <div class="section-title">🔀 Lógica condicional</div>
+        <p class="section-lead">Muestra u oculta preguntas dependiendo de cómo el respondente contestó preguntas anteriores. Esto hace tus encuestas más cortas y relevantes.</p>
+
+        <h3>Cómo configurar una condición</h3>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <div class="step-title">Abre la pregunta que quieres controlar</div>
+              <div class="step-desc">En el Constructor, haz clic en el ícono de <strong>GitBranch</strong> (lógica) en la tarjeta de la pregunta que quieres mostrar u ocultar.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <div class="step-title">Elige "Mostrar si" u "Ocultar si"</div>
+              <div class="step-desc">Selecciona el comportamiento: <strong>Mostrar si</strong> → la pregunta aparece solo cuando se cumple la condición. <strong>Ocultar si</strong> → la pregunta se esconde cuando se cumple.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <div class="step-title">Define la condición</div>
+              <div class="step-desc">Selecciona la pregunta fuente, el operador y el valor. Puedes combinar múltiples condiciones.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Operador</th><th>Descripción</th></tr></thead>
+            <tbody>
+              <tr><td><code>es igual a</code></td><td>La respuesta coincide exactamente con el valor</td></tr>
+              <tr><td><code>no es igual a</code></td><td>La respuesta es diferente al valor</td></tr>
+              <tr><td><code>contiene</code></td><td>La respuesta incluye el texto especificado</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">🗺️</span>
+          <div class="callout-body"><strong>Vista Mapa Visual:</strong> en el Constructor puedes cambiar a la vista de mapa (botón en la barra superior) para ver todas las conexiones lógicas entre preguntas de un vistazo. Las preguntas con condiciones se resaltan en ámbar.</div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── PIPING ── -->
+      <section id="piping">
+        <div class="section-title">🔗 Variables en preguntas</div>
+        <p class="section-lead">Inserta respuestas anteriores o el nombre del respondente directamente en el texto de tus preguntas para una experiencia más personalizada.</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Variable</th><th>Qué inserta</th><th>Ejemplo</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><code>{{nombre}}</code></td>
+                <td>El nombre del respondente (si "Solicitar nombre" está activo)</td>
+                <td><em>"¿Qué tal tu experiencia, {{nombre}}?"</em></td>
+              </tr>
+              <tr>
+                <td><code>{{P1}}</code></td>
+                <td>La respuesta a la pregunta 1</td>
+                <td><em>"Ya que elegiste {{P1}}, ¿por qué razón?"</em></td>
+              </tr>
+              <tr>
+                <td><code>{{P3}}</code></td>
+                <td>La respuesta a la pregunta 3</td>
+                <td><em>"Tu calificación fue {{P3}}. ¿Qué podríamos mejorar?"</em></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-note">
+          <span class="callout-icon">ℹ️</span>
+          <div class="callout-body">Las variables se reemplazan en tiempo real mientras el respondente avanza. Si una variable hace referencia a una pregunta no respondida aún, simplemente aparece vacía.</div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── WEBHOOK ── -->
+      <section id="webhook">
+        <div class="section-title">⚡ Webhook <span class="badge badge-new">Nuevo</span></div>
+        <p class="section-lead">Conecta tu encuesta con cualquier servicio externo. Cuando alguien envía una respuesta, DataForm dispara automáticamente un POST HTTP a la URL que configures.</p>
+
+        <h3>Formato del payload</h3>
+        <pre><code>{
+  "survey_id": "abc-123-def",
+  "respondent_name": "Ana García",
+  "answers": {
+    "q_1": "Muy satisfecho",
+    "q_2": 9,
+    "q_3": "El servicio fue excelente"
+  },
+  "score": 85,
+  "submitted_at": "2026-08-10T15:30:00.000Z"
+}</code></pre>
+
+        <h3>Casos de uso comunes</h3>
+        <div class="feat-grid">
+          <div class="feat-card">
+            <div class="feat-card-icon">📊</div>
+            <div class="feat-card-title">Google Sheets</div>
+            <div class="feat-card-desc">Cada respuesta aparece automáticamente como una nueva fila en tu hoja de cálculo (vía Make o Zapier)</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-card-icon">💬</div>
+            <div class="feat-card-title">Notificaciones Slack</div>
+            <div class="feat-card-desc">Recibe un mensaje en tu canal de Slack cada vez que alguien responde</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-card-icon">📧</div>
+            <div class="feat-card-title">Email automático</div>
+            <div class="feat-card-desc">Envía un email de seguimiento al respondente o al equipo</div>
+          </div>
+          <div class="feat-card">
+            <div class="feat-card-icon">🔧</div>
+            <div class="feat-card-title">Tu sistema</div>
+            <div class="feat-card-desc">Recibe los datos en tu propio backend o CRM directamente</div>
+          </div>
+        </div>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">🚀</span>
+          <div class="callout-body"><strong>Con Make (antes Integromat):</strong> crea un escenario con el módulo <em>Webhooks → Custom Webhook</em>, copia la URL que genera y pégala en el campo Webhook URL de tu encuesta. Make recibirá los datos automáticamente.</div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── PUBLICAR ── -->
+      <section id="publicar">
+        <div class="section-title">🚀 Publicar y compartir</div>
+        <p class="section-lead">Cuando tu encuesta esté lista, haz clic en <strong>Publicar</strong> en la barra del Constructor.</p>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <div class="step-title">Clic en "Publicar"</div>
+              <div class="step-desc">El botón aparece en la barra superior del Constructor. Al hacer clic, la encuesta se activa automáticamente y se genera el enlace público.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <div class="step-title">Comparte el enlace o QR</div>
+              <div class="step-desc">El modal de publicación muestra el enlace directo, un código QR descargable en PNG, y el botón para abrir la encuesta en una nueva pestaña.</div>
+            </div>
+          </div>
+        </div>
+
+        <p>El enlace público tiene este formato:</p>
+        <pre><code>https://dataform.dpdns.org/s/{ID-de-tu-encuesta}</code></pre>
+
+        <div class="callout callout-warn">
+          <span class="callout-icon">⚠️</span>
+          <div class="callout-body"><strong>Control de acceso:</strong> DataForm guarda en el navegador si alguien ya respondió la encuesta (por dispositivo). Si quieres múltiples respuestas desde el mismo dispositivo, el respondente puede hacer clic en "Contestar de nuevo".</div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── EMBED ── -->
+      <section id="embed">
+        <div class="section-title">🖥️ Código de embed <span class="badge badge-new">Nuevo</span></div>
+        <p class="section-lead">Incrusta tu encuesta directamente en cualquier sitio web con un <code>&lt;iframe&gt;</code>.</p>
+
+        <h3>Cómo obtener el código</h3>
+        <p>Ve a la sección de <strong>Analítica</strong>, selecciona tu encuesta y haz clic en el botón <strong>Compartir</strong> (ícono de código en la barra superior). Verás dos opciones:</p>
+        <ul>
+          <li><strong>Enlace directo</strong> — URL copiable con un clic</li>
+          <li><strong>Código de embed</strong> — fragmento HTML listo para pegar en tu web</li>
+        </ul>
+
+        <h3>Ejemplo del código generado</h3>
+        <pre><code>&lt;iframe
+  src="https://dataform.dpdns.org/s/tu-id"
+  width="100%"
+  height="650"
+  frameborder="0"
+  style="border:none;border-radius:12px"
+&gt;&lt;/iframe&gt;</code></pre>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">💡</span>
+          <div class="callout-body">Puedes ajustar el <code>height</code> según el número de preguntas. Para encuestas largas recomendamos 800–1000px. En modo conversacional 600px es suficiente.</div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── ANALÍTICA ── -->
+      <section id="analitica">
+        <div class="section-title">📊 Ver resultados</div>
+        <p class="section-lead">La sección <strong>Analítica</strong> muestra todos los datos de tu encuesta en tiempo real. Selecciona una encuesta de la lista para ver sus resultados.</p>
+
+        <h3>Panel de KPIs</h3>
+        <p>En la parte superior verás cuatro métricas clave:</p>
+        <div class="kv">
+          <div class="kv-row">
+            <div class="kv-key">Total respuestas</div>
+            <div class="kv-val">Número total de envíos recibidos</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">Última respuesta</div>
+            <div class="kv-val">Fecha y hora del envío más reciente</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">Tiempo promedio</div>
+            <div class="kv-val">Tiempo medio que tarda un respondente en completar (solo modo conversacional)</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">NPS Score</div>
+            <div class="kv-val">Si tienes una pregunta NPS, calcula el score automáticamente (-100 a +100)</div>
+          </div>
+        </div>
+
+        <h3>Gráficas por pregunta</h3>
+        <p>Cada pregunta tiene su propia visualización según el tipo:</p>
+        <ul>
+          <li><strong>Opción múltiple</strong> → barras horizontales con porcentaje</li>
+          <li><strong>NPS</strong> → score grande + barras de Detractores / Pasivos / Promotores</li>
+          <li><strong>Calificación</strong> → promedio con estrellas + distribución por valor</li>
+          <li><strong>Escala</strong> → promedio + histograma de valores</li>
+          <li><strong>Texto, Ranking, Matriz</strong> → tabla con las respuestas individuales</li>
+        </ul>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── ABANDONO ── -->
+      <section id="abandono">
+        <div class="section-title">📉 Abandono y tiempos <span class="badge badge-new">Nuevo</span></div>
+        <p class="section-lead">Dos nuevas gráficas debajo de los resultados por pregunta te ayudan a entender dónde pierde gente tu encuesta.</p>
+
+        <div class="kv">
+          <div class="kv-row">
+            <div class="kv-key">Tasa de completitud</div>
+            <div class="kv-val">Para cada pregunta muestra qué porcentaje de respondentes la contestaron. Barras en verde (≥80%), ámbar (≥50%) o rojo (&lt;50%). Funciona en todos los modos.</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">Tiempo promedio por pregunta</div>
+            <div class="kv-val">Cuántos segundos tardaron de media los respondentes en cada pregunta. Solo disponible en encuestas con <strong>Modo conversacional</strong> activo, ya que ese modo guarda los tiempos individuales.</div>
+          </div>
+        </div>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">🔍</span>
+          <div class="callout-body">Si una pregunta tiene tasa de completitud baja, considera hacerla opcional, simplificar su redacción o moverla a una posición más temprana en la encuesta.</div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── EXPORTAR ── -->
+      <section id="exportar">
+        <div class="section-title">⬇️ Exportar datos</div>
+        <p class="section-lead">Descarga todas las respuestas desde el botón <strong>Exportar</strong> en la vista de Analítica (requiere al menos una respuesta).</p>
+
+        <div class="kv">
+          <div class="kv-row">
+            <div class="kv-key">CSV / Excel</div>
+            <div class="kv-val">Archivo <code>.csv</code> con todas las respuestas en formato tabular. Incluye columnas para ID, Nombre, Fecha, una columna por pregunta, Puntaje y Resultado. Abre directamente en Excel o Google Sheets.</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">PDF con gráficas</div>
+            <div class="kv-val">Reporte profesional en A4 horizontal con: KPIs en la portada, gráficas nativas por tipo de pregunta (barras, NPS, estrellas) y tabla de respuestas individuales.</div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── IA ── -->
+      <section id="ia">
+        <div class="section-title">🤖 Análisis con IA <span class="badge badge-new">Nuevo</span></div>
+        <p class="section-lead">Para preguntas de texto abierto, DataForm puede resumir automáticamente las respuestas, detectar temas y estimar el sentimiento general. Funciona con los principales proveedores de IA: elige el que ya tienes o el que prefieras.</p>
+
+        <h3>Proveedores compatibles</h3>
+        <table style="width:100%;border-collapse:collapse;font-size:.85rem;margin-bottom:1.25rem;">
+          <thead>
+            <tr style="background:var(--surface-2);border-bottom:2px solid var(--border);">
+              <th style="text-align:left;padding:.6rem .75rem;color:var(--ink);">Proveedor</th>
+              <th style="text-align:left;padding:.6rem .75rem;color:var(--ink);">Modelo usado</th>
+              <th style="text-align:left;padding:.6rem .75rem;color:var(--ink);">Costo por análisis</th>
+              <th style="text-align:left;padding:.6rem .75rem;color:var(--ink);">Dónde obtener key</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:.6rem .75rem;font-weight:600;color:var(--ink);">🟣 Anthropic</td>
+              <td style="padding:.6rem .75rem;color:var(--ink-soft);">Claude Haiku 4.5</td>
+              <td style="padding:.6rem .75rem;color:var(--ink-soft);">&lt; $0.001 USD</td>
+              <td style="padding:.6rem .75rem;color:var(--ink-soft);">console.anthropic.com/settings/keys</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);background:var(--surface-2);">
+              <td style="padding:.6rem .75rem;font-weight:600;color:var(--ink);">🟢 OpenAI</td>
+              <td style="padding:.6rem .75rem;color:var(--ink-soft);">GPT-4o mini</td>
+              <td style="padding:.6rem .75rem;color:var(--ink-soft);">&lt; $0.001 USD</td>
+              <td style="padding:.6rem .75rem;color:var(--ink-soft);">platform.openai.com/api-keys</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:.6rem .75rem;font-weight:600;color:var(--ink);">🔵 Google Gemini</td>
+              <td style="padding:.6rem .75rem;color:var(--ink-soft);">Gemini 2.0 Flash Lite</td>
+              <td style="padding:.6rem .75rem;color:var(--success);">Tier gratuito</td>
+              <td style="padding:.6rem .75rem;color:var(--ink-soft);">aistudio.google.com/app/apikey</td>
+            </tr>
+            <tr>
+              <td style="padding:.6rem .75rem;font-weight:600;color:var(--ink);">🔴 Groq</td>
+              <td style="padding:.6rem .75rem;color:var(--ink-soft);">Llama 3.1 8B Instant</td>
+              <td style="padding:.6rem .75rem;color:var(--success);">Tier gratuito</td>
+              <td style="padding:.6rem .75rem;color:var(--ink-soft);">console.groq.com/keys</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout callout-tip" style="margin-bottom:1.5rem;">
+          <span class="callout-icon">💡</span>
+          <div class="callout-body"><strong>¿Sin cuenta de pago?</strong> Groq y Google Gemini tienen niveles gratuitos muy generosos — perfectos para empezar sin costo.</div>
+        </div>
+
+        <h3>Configuración previa</h3>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <div class="step-title">Elige tu proveedor y obtén una API key</div>
+              <div class="step-desc">Crea una cuenta en el proveedor que prefieras (ver tabla arriba) y genera una API key en su consola.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <div class="step-title">Selecciona el proveedor en DataForm</div>
+              <div class="step-desc">Ve a <strong>Configuración</strong> (ícono de engranaje en el panel lateral). Verás cuatro tarjetas: Anthropic, OpenAI, Google Gemini y Groq. Haz clic en la de tu proveedor para seleccionarla.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <div class="step-title">Ingresa y guarda la key</div>
+              <div class="step-desc">Escribe tu API key en el campo que aparece debajo de las tarjetas, haz clic en <strong>Guardar key</strong> y luego en <strong>Probar</strong> para confirmar que funciona.</div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Cómo usarlo</h3>
+        <p>En Analítica, dentro de la gráfica de cualquier pregunta de <strong>Texto abierto</strong>, verás el botón <strong>Analizar con IA</strong>. Al hacer clic, DataForm envía las respuestas al proveedor configurado y muestra:</p>
+        <ul>
+          <li><strong>Temas principales</strong> — los 2–3 temas más mencionados</li>
+          <li><strong>Sentimiento general</strong> — positivo / neutro / negativo con porcentaje estimado</li>
+          <li><strong>Insight clave</strong> — una frase con el hallazgo más relevante</li>
+        </ul>
+
+        <div class="callout callout-note">
+          <span class="callout-icon">🔒</span>
+          <div class="callout-body"><strong>Privacidad:</strong> tus API keys se guardan únicamente en tu navegador (localStorage) y nunca se transmiten a los servidores de DataForm. El costo del análisis va directamente a tu cuenta del proveedor elegido. Puedes guardar keys de varios proveedores y cambiar entre ellos cuando quieras.</div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── BANCO ── -->
+      <section id="banco">
+        <div class="section-title">🗄️ Banco de preguntas</div>
+        <p class="section-lead">Guarda tus preguntas favoritas para reutilizarlas en futuras encuestas sin tener que recrearlas desde cero.</p>
+
+        <h3>Guardar una pregunta</h3>
+        <p>En el Constructor, en la tarjeta de cualquier pregunta, abre el menú de opciones (⋯) y selecciona <strong>Guardar en banco</strong>. Puedes asignarle un título y etiquetas para encontrarla fácilmente después.</p>
+
+        <h3>Insertar del banco</h3>
+        <p>En la barra superior del Constructor haz clic en el ícono de <strong>Banco</strong>. Se abrirá un panel lateral con todas tus preguntas guardadas. Puedes filtrar por etiqueta o buscar por texto. Haz clic en una para insertarla al final de tu encuesta.</p>
+
+        <div class="callout callout-tip">
+          <span class="callout-icon">💡</span>
+          <div class="callout-body">Las preguntas del banco se guardan por separado de las encuestas. Eliminar una encuesta no elimina las preguntas que guardaste en el banco.</div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── ADMIN ── -->
+      <section id="admin">
+        <div class="section-title">🛡️ Panel de administración</div>
+        <p class="section-lead">Visible solo para cuentas con rol de administrador. Muestra métricas globales de la plataforma.</p>
+
+        <div class="kv">
+          <div class="kv-row">
+            <div class="kv-key">KPIs globales</div>
+            <div class="kv-val">Total de usuarios registrados, encuestas creadas, encuestas activas y respuestas totales en la plataforma</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">Tabla de usuarios</div>
+            <div class="kv-val">Lista de todos los usuarios con: email, fecha de registro, número de encuestas, encuestas activas, respuestas recibidas y rol (Admin / Usuario)</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">Actualizar</div>
+            <div class="kv-val">Botón para refrescar los datos en tiempo real</div>
+          </div>
+        </div>
+
+        <div class="callout callout-warn">
+          <span class="callout-icon">⚠️</span>
+          <div class="callout-body">El panel de administración requiere que el campo <code>is_admin = true</code> esté configurado en la tabla <code>profiles</code> de Supabase. Contáctate con el administrador del sistema para obtener acceso.</div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- ── SETTINGS ── -->
+      <section id="settings">
+        <div class="section-title">⚙️ Configuración</div>
+        <p class="section-lead">Accede desde el ícono de engranaje en el panel lateral. Configura el proveedor de IA que usarás para el análisis de respuestas abiertas.</p>
+
+        <h3>Selector de proveedor</h3>
+        <p>Verás cuatro tarjetas: <strong>Anthropic</strong>, <strong>OpenAI</strong>, <strong>Google Gemini</strong> y <strong>Groq</strong>. La tarjeta activa muestra un punto azul en la esquina; las tarjetas con key guardada muestran un ✓ verde. Haz clic en cualquiera para cambiar de proveedor.</p>
+
+        <div class="kv" style="margin-top:1rem;">
+          <div class="kv-row">
+            <div class="kv-key">Campo API Key</div>
+            <div class="kv-val">Muestra el campo y placeholder del proveedor seleccionado. Puedes guardar keys de varios proveedores y cambiar entre ellos sin perder las demás.</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">Botón "Guardar key"</div>
+            <div class="kv-val">Almacena la key en tu navegador (localStorage). No se envía a los servidores de DataForm.</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">Botón "Probar"</div>
+            <div class="kv-val">Hace una llamada mínima al API del proveedor seleccionado para verificar que la key sea válida. No guarda la key si aún no la has guardado.</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">Botón eliminar (🗑)</div>
+            <div class="kv-val">Borra la key del proveedor activo de tu navegador. Aparece solo si ya hay una key guardada para ese proveedor.</div>
+          </div>
+          <div class="kv-row">
+            <div class="kv-key">Instrucciones por proveedor</div>
+            <div class="kv-val">Al seleccionar cada tarjeta se actualizan las instrucciones de cómo obtener la key, con el enlace directo a la consola del proveedor.</div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider">
+
+      <!-- Footer -->
+      <div style="text-align:center;padding:24px 0 8px;color:var(--ink-faint);font-size:0.8125rem;">
+        DataForm · Manual v2.0 · © 2026 Daniel Cruz Bautista
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+// Active nav highlighting on scroll
+(function(){
+  const links = document.querySelectorAll('.nav a[href^="#"]');
+  const sections = Array.from(links).map(l => document.querySelector(l.getAttribute('href'))).filter(Boolean);
+
+  function update(){
+    let active = sections[0];
+    for(const s of sections){
+      if(s.getBoundingClientRect().top <= 80) active = s;
+    }
+    links.forEach(l => {
+      l.classList.toggle('active', l.getAttribute('href') === '#' + active?.id);
+    });
+  }
+
+  window.addEventListener('scroll', update, {passive:true});
+  update();
+})();
+</script>
