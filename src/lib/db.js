@@ -157,6 +157,75 @@ export const responsesApi = {
   },
 };
 
+export const adminApi = {
+  async getProfile(userId) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, email, is_admin, created_at')
+      .eq('id', userId)
+      .single();
+    if (error) return null;
+    return data;
+  },
+
+  async getStats() {
+    const [
+      { count: usersCount },
+      { count: surveysCount },
+      { count: responsesCount },
+      { count: activeCount },
+    ] = await Promise.all([
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase.from('surveys').select('*', { count: 'exact', head: true }),
+      supabase.from('responses').select('*', { count: 'exact', head: true }),
+      supabase.from('surveys').select('*', { count: 'exact', head: true }).eq('is_active', true),
+    ]);
+    return {
+      usersCount:    usersCount    ?? 0,
+      surveysCount:  surveysCount  ?? 0,
+      responsesCount: responsesCount ?? 0,
+      activeCount:   activeCount   ?? 0,
+    };
+  },
+
+  async getUsers() {
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('id, email, is_admin, created_at')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+
+    const { data: surveys } = await supabase
+      .from('surveys')
+      .select('user_id, id, is_active');
+
+    const surveyMap = {};
+    const activeMap = {};
+    const surveyToUser = {};
+    (surveys || []).forEach(s => {
+      surveyMap[s.user_id] = (surveyMap[s.user_id] || 0) + 1;
+      if (s.is_active) activeMap[s.user_id] = (activeMap[s.user_id] || 0) + 1;
+      surveyToUser[s.id] = s.user_id;
+    });
+
+    const { data: responses } = await supabase
+      .from('responses')
+      .select('survey_id');
+    const respMap = {};
+    (responses || []).forEach(r => {
+      const uid = surveyToUser[r.survey_id];
+      if (uid) respMap[uid] = (respMap[uid] || 0) + 1;
+    });
+
+    return (profiles || []).map(p => ({
+      ...p,
+      surveyCount:   surveyMap[p.id] || 0,
+      activeSurveys: activeMap[p.id] || 0,
+      responseCount: respMap[p.id]   || 0,
+    }));
+  },
+};
+
 export const bankApi = {
   async list(userId) {
     const { data, error } = await supabase

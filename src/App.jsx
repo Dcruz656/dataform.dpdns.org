@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, PenTool, BarChart3, Palette, Archive, Menu, X, LogOut, ClipboardList, Bell, HelpCircle, Search } from 'lucide-react';
+import { LayoutDashboard, PenTool, BarChart3, Palette, Archive, Menu, X, LogOut, ClipboardList, Bell, HelpCircle, Search, Shield } from 'lucide-react';
 import { DEFAULT_QUESTIONS } from './constants';
 import NavItem from './components/NavItem';
 import BuilderView from './components/builder/BuilderView';
@@ -9,9 +9,10 @@ import AnalyticsView from './views/AnalyticsView';
 import AppearanceView from './views/AppearanceView';
 import ArchiveView from './views/ArchiveView';
 import MySurveysView from './views/MySurveysView';
+import AdminView from './views/AdminView';
 import LoginView from './views/LoginView';
 import { useAuth } from './contexts/AuthContext';
-import { surveysApi, bankApi } from './lib/db';
+import { surveysApi, bankApi, adminApi } from './lib/db';
 
 export default function App() {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -39,6 +40,9 @@ export default function App() {
   const [questionBank, setQuestionBank] = useState([]);
   const [loadingSurveys, setLoadingSurveys] = useState(false);
 
+  const [userProfile, setUserProfile] = useState(null);
+  const isAdmin = userProfile?.is_admin === true;
+
   const [saveStatus, setSaveStatus] = useState('idle'); // idle | saving | saved | error
   const autoSaveTimer = useRef(null);
   const isMounted = useRef(false);
@@ -49,10 +53,12 @@ export default function App() {
     if (!user) {
       setSurveys([]);
       setQuestionBank([]);
+      setUserProfile(null);
       return;
     }
     loadSurveys();
     loadBank();
+    adminApi.getProfile(user.id).then(setUserProfile);
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadSurveys = async () => {
@@ -373,6 +379,9 @@ export default function App() {
             active={activeTab === 'archive'}
             onClick={() => navigate('archive')}
           />
+          {isAdmin && (
+            <NavItem icon={<Shield size={18} />} label="Admin" active={activeTab === 'admin'} onClick={() => navigate('admin')} />
+          )}
         </nav>
 
         {activeTab === 'builder' && (
@@ -505,6 +514,7 @@ export default function App() {
               />
             )}
             {activeTab === 'appearance' && <AppearanceView theme={theme} setTheme={setTheme} />}
+            {activeTab === 'admin' && isAdmin && <AdminView />}
           </div>
           <footer className="hidden md:block px-4 md:px-8 py-4 border-t border-surface-container-highest bg-surface-container-lowest text-center text-xs text-on-surface-variant flex-shrink-0">
             © 2025 DataForm. Daniel Cruz Bautista. Todos los derechos reservados.
@@ -520,6 +530,7 @@ export default function App() {
             { tab: 'analytics',  icon: <BarChart3 size={20} />,       label: 'Analítica' },
             { tab: 'appearance', icon: <Palette size={20} />,         label: 'Apariencia' },
             { tab: 'archive',    icon: <Archive size={20} />,         label: 'Archivo' },
+            ...(isAdmin ? [{ tab: 'admin', icon: <Shield size={20} />, label: 'Admin' }] : []),
           ].map(({ tab, icon, label }) => (
             <button
               key={tab}
