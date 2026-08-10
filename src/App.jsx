@@ -278,6 +278,7 @@ export default function App() {
       setQuestionBank(prev => [item, ...prev]);
     } catch (err) {
       console.error('Error saving to bank:', err);
+      throw err;
     }
   };
 

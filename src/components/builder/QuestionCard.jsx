@@ -20,7 +20,9 @@ const TYPE_ICONS = {
 export default function QuestionCard({ question, index, allQuestions, surveyConfig, dragHandleProps, onUpdate, onDuplicate, onDelete, onSaveToBank }) {
   const [showLogic, setShowLogic] = useState(question.conditions?.length > 0);
   const [showVarMenu, setShowVarMenu] = useState(false);
-  const [bankModal, setBankModal] = useState(false);
+  const [bankModal, setBankModal]   = useState(false);
+  const [bankSaving, setBankSaving] = useState(false);
+  const [bankError, setBankError]   = useState('');
   const [bankTitle, setBankTitle] = useState('');
   const [bankTags, setBankTags] = useState('');
   const textRef = useRef(null);
@@ -52,6 +54,20 @@ export default function QuestionCard({ question, index, allQuestions, surveyConf
       el.focus();
       el.setSelectionRange(start + token.length, start + token.length);
     }, 0);
+  };
+
+  const doSaveToBank = async () => {
+    if (!bankTitle.trim() || bankSaving) return;
+    setBankSaving(true);
+    setBankError('');
+    try {
+      await onSaveToBank?.(question, bankTitle, bankTags);
+      setBankModal(false);
+    } catch (err) {
+      setBankError(err?.message || 'Error al guardar. Intenta de nuevo.');
+    } finally {
+      setBankSaving(false);
+    }
   };
 
   const changeType = newType => {
@@ -94,7 +110,7 @@ export default function QuestionCard({ question, index, allQuestions, surveyConf
               Requerida
             </label>
             <button
-              onClick={() => { setBankTitle(question.text.slice(0, 60) || 'Pregunta sin título'); setBankTags(''); setBankModal(true); }}
+              onClick={() => { setBankTitle(question.text.slice(0, 60) || 'Pregunta sin título'); setBankTags(''); setBankError(''); setBankModal(true); }}
               className="p-1 text-slate-400 hover:text-blue-600 transition-colors"
               title="Guardar en banco"
             >
@@ -211,21 +227,25 @@ export default function QuestionCard({ question, index, allQuestions, surveyConf
                   onChange={e => setBankTags(e.target.value)}
                   className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                   placeholder="ej: satisfacción, nps, onboarding"
-                  onKeyDown={e => e.key === 'Enter' && bankTitle.trim() && (onSaveToBank?.(question, bankTitle, bankTags), setBankModal(false))}
+                  onKeyDown={e => { if (e.key === 'Enter' && bankTitle.trim()) doSaveToBank(); }}
                 />
               </div>
             </div>
+            {bankError && (
+              <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{bankError}</p>
+            )}
             <div className="flex gap-2 pt-1">
               <button
-                onClick={() => { if (bankTitle.trim()) { onSaveToBank?.(question, bankTitle, bankTags); setBankModal(false); } }}
-                disabled={!bankTitle.trim()}
+                onClick={doSaveToBank}
+                disabled={!bankTitle.trim() || bankSaving}
                 className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                Guardar
+                {bankSaving ? 'Guardando...' : 'Guardar'}
               </button>
               <button
                 onClick={() => setBankModal(false)}
-                className="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg text-sm hover:bg-slate-50 transition-colors"
+                disabled={bankSaving}
+                className="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg text-sm hover:bg-slate-50 disabled:opacity-40 transition-colors"
               >
                 Cancelar
               </button>

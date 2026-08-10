@@ -119,7 +119,7 @@ export default function BuilderView({
 
   const filteredBank = useMemo(() => {
     return (questionBank || []).filter(item => {
-      const matchSearch = !bankSearch || item.titulo.toLowerCase().includes(bankSearch.toLowerCase());
+      const matchSearch = !bankSearch || (item.titulo || '').toLowerCase().includes(bankSearch.toLowerCase());
       const matchTag = !bankTagFilter || (item.etiquetas || []).includes(bankTagFilter);
       return matchSearch && matchTag;
     });
