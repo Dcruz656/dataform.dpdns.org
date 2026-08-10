@@ -1,10 +1,51 @@
 import { useState, useEffect } from 'react';
 import { Settings, Key, CheckCircle, AlertTriangle, Eye, EyeOff, Trash2, RefreshCw } from 'lucide-react';
+import { PROVIDERS, LS_PROVIDER, testKey } from '../lib/ai';
 
-export const LS_ANTHROPIC_KEY = 'df_anthropic_key';
+/* ── Provider icons (inline SVG) ─────────────────────────────────── */
+function IconAnthropic({ size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect width="24" height="24" rx="6" fill="#1a1a1a" />
+      <text x="12" y="16.5" textAnchor="middle" fontFamily="Georgia,serif" fontSize="13" fontWeight="bold" fill="#e8d5b7">A</text>
+    </svg>
+  );
+}
+function IconOpenAI({ size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect width="24" height="24" rx="6" fill="#10a37f" />
+      <path d="M12 5.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Zm0 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z" fill="white" />
+      <path d="M12 14v4.5" stroke="white" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+function IconGoogle({ size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect width="24" height="24" rx="6" fill="#fff" />
+      <text x="12" y="16.5" textAnchor="middle" fontFamily="Arial,sans-serif" fontSize="13" fontWeight="bold">
+        <tspan fill="#4285F4">G</tspan>
+      </text>
+      <rect x="0" y="0" width="24" height="24" rx="6" stroke="#e0e0e0" strokeWidth="1" fill="none" />
+    </svg>
+  );
+}
+function IconGroq({ size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect width="24" height="24" rx="6" fill="#f55036" />
+      <path d="M12 7a5 5 0 1 0 3.54 8.54L14.12 14.1A3 3 0 1 1 12 10v2.5l4-3.5-4-3.5V7Z" fill="white" />
+    </svg>
+  );
+}
+
+const PROVIDER_ICONS = { anthropic: IconAnthropic, openai: IconOpenAI, google: IconGoogle, groq: IconGroq };
+const PROVIDER_ORDER = ['anthropic', 'openai', 'google', 'groq'];
 
 export default function SettingsView() {
-  const [apiKey, setApiKey]     = useState('');
+  const [provider, setProvider] = useState(() => localStorage.getItem(LS_PROVIDER) || 'anthropic');
+  const [keys, setKeys]         = useState({});
   const [show, setShow]         = useState(false);
   const [saved, setSaved]       = useState(false);
   const [testing, setTesting]   = useState(false);
@@ -12,57 +53,52 @@ export default function SettingsView() {
   const [testError, setTestError]   = useState('');
 
   useEffect(() => {
-    const stored = localStorage.getItem(LS_ANTHROPIC_KEY);
-    if (stored) setApiKey(stored);
+    const loaded = {};
+    Object.keys(PROVIDERS).forEach(k => { loaded[k] = localStorage.getItem(PROVIDERS[k].storageKey) || ''; });
+    setKeys(loaded);
   }, []);
 
-  const isStored = !!localStorage.getItem(LS_ANTHROPIC_KEY);
+  const cfg         = PROVIDERS[provider];
+  const currentKey  = keys[provider] ?? '';
+  const isStored    = !!localStorage.getItem(cfg?.storageKey);
+
+  const handleProviderChange = (p) => {
+    setProvider(p);
+    localStorage.setItem(LS_PROVIDER, p);
+    setTestResult(null);
+    setShow(false);
+  };
+
+  const handleKeyChange = (v) => {
+    setKeys(prev => ({ ...prev, [provider]: v }));
+    setTestResult(null);
+  };
 
   const handleSave = () => {
-    const trimmed = apiKey.trim();
+    const trimmed = currentKey.trim();
     if (!trimmed) return;
-    localStorage.setItem(LS_ANTHROPIC_KEY, trimmed);
+    localStorage.setItem(cfg.storageKey, trimmed);
     setSaved(true);
-    setTestResult(null);
     setTimeout(() => setSaved(false), 2000);
   };
 
   const handleClear = () => {
-    localStorage.removeItem(LS_ANTHROPIC_KEY);
-    setApiKey('');
+    localStorage.removeItem(cfg.storageKey);
+    setKeys(prev => ({ ...prev, [provider]: '' }));
     setTestResult(null);
   };
 
   const handleTest = async () => {
-    const key = apiKey.trim();
+    const key = currentKey.trim();
     if (!key) return;
     setTesting(true);
     setTestResult(null);
     setTestError('');
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': key,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 5,
-          messages: [{ role: 'user', content: 'ping' }],
-        }),
-      });
-      if (res.ok) {
-        setTestResult('ok');
-      } else {
-        const err = await res.json().catch(() => ({}));
-        setTestError(err?.error?.message || `Error ${res.status}`);
-        setTestResult('error');
-      }
+      await testKey(provider, key);
+      setTestResult('ok');
     } catch (e) {
-      setTestError(e.message || 'Error de red');
+      setTestError(e.message || 'Error de conexión');
       setTestResult('error');
     } finally {
       setTesting(false);
@@ -82,90 +118,130 @@ export default function SettingsView() {
         </div>
       </div>
 
-      {/* API Key section */}
+      {/* AI provider section */}
       <div className="bg-surface rounded-2xl border border-surface-container-highest overflow-hidden">
         <div className="px-6 py-4 border-b border-surface-container-highest flex items-center gap-3">
           <Key size={16} className="text-on-surface-variant" />
-          <h2 className="font-bold text-on-surface">Anthropic API Key</h2>
-          {isStored && (
-            <span className="ml-auto inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
-              <CheckCircle size={10} /> Configurada
-            </span>
-          )}
+          <h2 className="font-bold text-on-surface">Proveedor de IA</h2>
+          <span className="ml-auto text-xs text-on-surface-variant">Para análisis de respuestas abiertas</span>
         </div>
 
-        <div className="p-6 space-y-5">
-          <p className="text-sm text-on-surface-variant leading-relaxed">
-            Ingresa tu API key de Anthropic para habilitar el análisis de respuestas abiertas con IA en la
-            sección de <strong className="text-on-surface">Analítica</strong>. La key se guarda únicamente
-            en tu navegador y nunca se envía a nuestros servidores.
-          </p>
-
-          {/* Input */}
-          <div className="relative">
-            <input
-              type={show ? 'text' : 'password'}
-              value={apiKey}
-              onChange={e => { setApiKey(e.target.value); setTestResult(null); }}
-              placeholder="sk-ant-api03-..."
-              className="w-full bg-surface-container-low border border-surface-container-highest focus:border-primary focus:ring-1 focus:ring-primary rounded-xl px-4 py-3 text-sm text-on-surface outline-none transition-all pr-11 font-mono"
-            />
-            <button
-              onClick={() => setShow(v => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors p-1"
-            >
-              {show ? <EyeOff size={15} /> : <Eye size={15} />}
-            </button>
+        <div className="p-6 space-y-6">
+          {/* Provider grid */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {PROVIDER_ORDER.map(p => {
+              const Icon   = PROVIDER_ICONS[p];
+              const meta   = PROVIDERS[p];
+              const hasKey = !!localStorage.getItem(meta.storageKey);
+              const active = provider === p;
+              return (
+                <button
+                  key={p}
+                  onClick={() => handleProviderChange(p)}
+                  className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 text-center transition-all ${
+                    active
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : 'border-surface-container-highest bg-surface-container-low hover:border-primary/40 hover:bg-surface-container'
+                  }`}
+                >
+                  <Icon size={32} />
+                  <div>
+                    <p className="text-xs font-bold text-on-surface leading-tight">{meta.name}</p>
+                    <p className="text-[10px] text-on-surface-variant mt-0.5 leading-tight">{meta.tagline}</p>
+                  </div>
+                  {hasKey && (
+                    <span className="absolute top-2 right-2">
+                      <CheckCircle size={12} className="text-emerald-500" />
+                    </span>
+                  )}
+                  {active && (
+                    <span className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-primary" />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Test result */}
-          {testResult === 'ok' && (
-            <div className="flex items-center gap-2 text-emerald-700 text-sm font-medium">
-              <CheckCircle size={14} /> Key válida — análisis IA listo para usar
+          {/* Key input for selected provider */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 flex-shrink-0">
+                {(() => { const Icon = PROVIDER_ICONS[provider]; return <Icon size={20} />; })()}
+              </div>
+              <p className="text-sm font-semibold text-on-surface">{cfg.name} API Key</p>
+              {isStored && (
+                <span className="ml-auto inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                  <CheckCircle size={10} /> Configurada
+                </span>
+              )}
             </div>
-          )}
-          {testResult === 'error' && (
-            <div className="flex items-start gap-2 text-error text-sm">
-              <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
-              <span>{testError || 'Key inválida. Verifica que sea correcta.'}</span>
-            </div>
-          )}
 
-          {/* Actions */}
-          <div className="flex gap-2">
-            <button
-              onClick={handleSave}
-              disabled={!apiKey.trim()}
-              className="flex-1 bg-primary text-on-primary font-semibold text-sm py-2.5 rounded-xl hover:bg-surface-tint transition-colors disabled:opacity-40 active:scale-95"
-            >
-              {saved ? '¡Guardada!' : 'Guardar key'}
-            </button>
-            <button
-              onClick={handleTest}
-              disabled={!apiKey.trim() || testing}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-surface-container-highest bg-surface text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors disabled:opacity-40"
-            >
-              {testing ? <><RefreshCw size={13} className="animate-spin" /> Probando...</> : 'Probar'}
-            </button>
-            {isStored && (
+            <div className="relative">
+              <input
+                type={show ? 'text' : 'password'}
+                value={currentKey}
+                onChange={e => handleKeyChange(e.target.value)}
+                placeholder={cfg.placeholder}
+                className="w-full bg-surface-container-low border border-surface-container-highest focus:border-primary focus:ring-1 focus:ring-primary rounded-xl px-4 py-3 text-sm text-on-surface outline-none transition-all pr-11 font-mono"
+              />
               <button
-                onClick={handleClear}
-                className="px-3 py-2.5 rounded-xl border border-error/20 text-error hover:bg-error-container transition-colors"
-                title="Eliminar key"
+                onClick={() => setShow(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors p-1"
               >
-                <Trash2 size={15} />
+                {show ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
+            </div>
+
+            {testResult === 'ok' && (
+              <div className="flex items-center gap-2 text-emerald-700 text-sm font-medium">
+                <CheckCircle size={14} /> Key válida — análisis IA listo
+              </div>
             )}
+            {testResult === 'error' && (
+              <div className="flex items-start gap-2 text-error text-sm">
+                <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+                <span>{testError || 'Key inválida. Verifica que sea correcta.'}</span>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleSave}
+                disabled={!currentKey.trim()}
+                className="flex-1 bg-primary text-on-primary font-semibold text-sm py-2.5 rounded-xl hover:bg-surface-tint transition-colors disabled:opacity-40 active:scale-95"
+              >
+                {saved ? '¡Guardada!' : 'Guardar key'}
+              </button>
+              <button
+                onClick={handleTest}
+                disabled={!currentKey.trim() || testing}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-surface-container-highest bg-surface text-sm font-medium text-on-surface hover:bg-surface-container-low transition-colors disabled:opacity-40"
+              >
+                {testing ? <><RefreshCw size={13} className="animate-spin" /> Probando...</> : 'Probar'}
+              </button>
+              {isStored && (
+                <button
+                  onClick={handleClear}
+                  className="px-3 py-2.5 rounded-xl border border-error/20 text-error hover:bg-error-container transition-colors"
+                  title="Eliminar key"
+                >
+                  <Trash2 size={15} />
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Help */}
+          {/* How to get a key */}
           <div className="bg-surface-container-low rounded-xl p-4 text-xs text-on-surface-variant space-y-1.5">
-            <p className="font-semibold text-on-surface">¿Cómo obtener una API key?</p>
-            <p>1. Ve a <strong>console.anthropic.com</strong> y crea una cuenta.</p>
-            <p>2. En la sección <strong>API Keys</strong>, genera una nueva key.</p>
-            <p>3. El análisis usa <strong>Claude Haiku</strong> (el modelo más económico).</p>
-            <p className="text-primary/80">Costo aproximado: menos de $0.001 USD por análisis.</p>
+            <p className="font-semibold text-on-surface">¿Cómo obtener la key de {cfg.name}?</p>
+            {cfg.steps.map((s, i) => <p key={i}>{i + 1}. {s}</p>)}
           </div>
+
+          {/* Privacy note */}
+          <p className="text-xs text-on-surface-variant">
+            Las API keys se guardan <strong className="text-on-surface">únicamente en tu navegador</strong> (localStorage) y nunca
+            se transmiten a nuestros servidores.
+          </p>
         </div>
       </div>
     </div>
