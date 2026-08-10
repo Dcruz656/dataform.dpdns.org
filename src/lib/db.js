@@ -4,19 +4,23 @@ import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase';
 // Individual DB columns → theme._config so App.jsx doesn't need changes.
 const toApp = row => {
   if (!row) return row;
-  const { _config: _ignored, ...pureTheme } = row.theme ?? {};
+  const { _config: _ignored, _extra = {}, ...pureTheme } = row.theme ?? {};
   return {
     ...row,
     title: row.title ?? row.name,
     theme: {
       ...pureTheme,
       _config: {
-        instructions: row.instructions ?? '',
-        requireName:  row.require_name  ?? false,
-        conversational: row.conversational ?? false,
-        timeLimit:    row.time_limit    ?? false,
-        startDate:    row.start_date    ?? '',
-        endDate:      row.end_date      ?? '',
+        instructions:    row.instructions ?? '',
+        requireName:     row.require_name  ?? false,
+        conversational:  row.conversational ?? false,
+        timeLimit:       row.time_limit    ?? false,
+        startDate:       row.start_date    ?? '',
+        endDate:         row.end_date      ?? '',
+        maxResponses:    _extra.maxResponses    ?? 0,
+        thankYouMessage: _extra.thankYouMessage ?? '',
+        redirectUrl:     _extra.redirectUrl     ?? '',
+        webhookUrl:      _extra.webhookUrl      ?? '',
       },
     },
   };
@@ -24,7 +28,7 @@ const toApp = row => {
 
 // Convert app-level survey data to DB column names.
 const toDb = ({ title, questions, theme, scoreRanges, isActive }) => {
-  const { _config = {}, ...pureTheme } = theme ?? {};
+  const { _config = {}, _extra: _oldExtra, ...pureTheme } = theme ?? {};
   return {
     name:           title,
     title:          title,
@@ -36,7 +40,15 @@ const toDb = ({ title, questions, theme, scoreRanges, isActive }) => {
     start_date:     _config.startDate      || null,
     end_date:       _config.endDate        || null,
     questions:      questions,
-    theme:          pureTheme,
+    theme: {
+      ...pureTheme,
+      _extra: {
+        maxResponses:    _config.maxResponses    ?? 0,
+        thankYouMessage: _config.thankYouMessage ?? '',
+        redirectUrl:     _config.redirectUrl     ?? '',
+        webhookUrl:      _config.webhookUrl      ?? '',
+      },
+    },
     score_ranges:   scoreRanges ?? [],
   };
 };
@@ -92,8 +104,16 @@ export const surveysApi = {
       dbPatch.status = is_active ? 'Activa' : 'Borrador';
     }
     if (theme !== undefined) {
-      const { _config = {}, ...pureTheme } = theme;
-      dbPatch.theme = pureTheme;
+      const { _config = {}, _extra: _oldExtra, ...pureTheme } = theme;
+      dbPatch.theme = {
+        ...pureTheme,
+        _extra: {
+          maxResponses:    _config.maxResponses    ?? 0,
+          thankYouMessage: _config.thankYouMessage ?? '',
+          redirectUrl:     _config.redirectUrl     ?? '',
+          webhookUrl:      _config.webhookUrl      ?? '',
+        },
+      };
       if (_config.instructions   !== undefined) dbPatch.instructions   = _config.instructions;
       if (_config.requireName    !== undefined) dbPatch.require_name   = _config.requireName;
       if (_config.conversational !== undefined) dbPatch.conversational = _config.conversational;
