@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, RefreshCw, Download, FileText, Sheet, TrendingUp, Users, Clock, Star, Sparkles, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, RefreshCw, Download, FileText, Sheet, TrendingUp, Users, Clock, Star, Sparkles, AlertTriangle, Copy, Check as CheckIcon, Code } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { COLORS } from '../constants';
@@ -514,6 +514,131 @@ function QuestionCards({ questions, responses }) {
   );
 }
 
+/* ── Abandonment / completion funnel ──────────────────────────────── */
+function AbandonmentChart({ questions, responses }) {
+  const realQs = questions.filter(q => q.type !== 'section');
+  if (!realQs.length || !responses.length) return null;
+  return (
+    <div className="bg-surface-container-lowest rounded-xl border border-surface-variant ambient-shadow p-6">
+      <h3 className="text-xl font-semibold text-on-surface mb-1">Tasa de Completitud por Pregunta</h3>
+      <p className="text-xs text-on-surface-variant mb-5">Porcentaje de respondentes que contestaron cada pregunta</p>
+      <div className="space-y-3">
+        {realQs.map((q, i) => {
+          const answered = responses.filter(r => {
+            const v = r.answers?.[q.id];
+            return v != null && v !== '' && !(typeof v === 'object' && !Object.keys(v).length);
+          }).length;
+          const pct = Math.round((answered / responses.length) * 100);
+          return (
+            <div key={q.id} className="space-y-1">
+              <div className="flex justify-between text-sm gap-3">
+                <span className="text-on-surface font-medium flex items-center gap-2 min-w-0">
+                  <span className="text-xs font-bold text-primary bg-primary-fixed px-1.5 py-0.5 rounded-full flex-shrink-0">P{i + 1}</span>
+                  <span className="truncate text-xs">{q.text || '(sin texto)'}</span>
+                </span>
+                <span className="text-on-surface-variant font-semibold text-xs flex-shrink-0">{answered}/{responses.length} · {pct}%</span>
+              </div>
+              <div className="h-2.5 bg-surface-container rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-error'}`}
+                  style={{ width: `${Math.max(pct, 1)}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Average time per question (conversational only) ─────────────── */
+function TimingChart({ questions, responses }) {
+  const realQs = questions.filter(q => q.type !== 'section');
+  const data = realQs.map((q, i) => {
+    const ts = responses.flatMap(r =>
+      Array.isArray(r.timings)
+        ? r.timings.filter(t => String(t.question_id) === String(q.id)).map(t => t.duration_ms)
+        : []
+    ).filter(Boolean);
+    return { q, num: i + 1, avgMs: ts.length ? ts.reduce((a, b) => a + b, 0) / ts.length : null, count: ts.length };
+  }).filter(d => d.avgMs !== null);
+
+  if (!data.length) return null;
+  const maxMs = Math.max(...data.map(d => d.avgMs), 1);
+
+  return (
+    <div className="bg-surface-container-lowest rounded-xl border border-surface-variant ambient-shadow p-6">
+      <h3 className="text-xl font-semibold text-on-surface mb-1">Tiempo Promedio por Pregunta</h3>
+      <p className="text-xs text-on-surface-variant mb-5">Solo en encuestas con modo conversacional</p>
+      <div className="space-y-3">
+        {data.map(({ q, num, avgMs }) => {
+          const sec = (avgMs / 1000).toFixed(1);
+          const pct = (avgMs / maxMs) * 100;
+          return (
+            <div key={q.id} className="space-y-1">
+              <div className="flex justify-between text-sm gap-3">
+                <span className="text-on-surface font-medium flex items-center gap-2 min-w-0">
+                  <span className="text-xs font-bold text-primary bg-primary-fixed px-1.5 py-0.5 rounded-full flex-shrink-0">P{num}</span>
+                  <span className="truncate text-xs">{q.text || '(sin texto)'}</span>
+                </span>
+                <span className="text-on-surface-variant font-semibold text-xs flex-shrink-0">{sec}s</span>
+              </div>
+              <div className="h-2.5 bg-surface-container rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Share panel (URL + embed code) ──────────────────────────────── */
+function SharePanel({ surveyId }) {
+  const [copiedUrl, setCopiedUrl] = useState(false);
+  const [copiedEmbed, setCopiedEmbed] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  if (!surveyId) return null;
+  const url = `https://dataform.dpdns.org/s/${surveyId}`;
+  const embed = `<iframe src="${url}" width="100%" height="650" frameborder="0" style="border:none;border-radius:12px"></iframe>`;
+
+  const copy = (text, setter) => {
+    navigator.clipboard.writeText(text).then(() => { setter(true); setTimeout(() => setter(false), 2000); });
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm font-semibold text-on-surface hover:bg-surface-container-low transition-colors shadow-sm"
+      >
+        <Code size={15} /> Compartir
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-2 bg-surface border border-surface-container-highest rounded-2xl shadow-xl z-20 w-80 p-4 space-y-4">
+          <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Enlace directo</p>
+          <div className="flex gap-2">
+            <div className="flex-1 bg-surface-container-low rounded-lg px-3 py-2 text-xs font-mono text-on-surface-variant truncate">{url}</div>
+            <button onClick={() => copy(url, setCopiedUrl)} className={`px-3 py-2 rounded-lg text-xs font-medium flex-shrink-0 transition-colors ${copiedUrl ? 'bg-emerald-100 text-emerald-700' : 'bg-surface-container-low hover:bg-surface-container text-on-surface'}`}>
+              {copiedUrl ? <CheckIcon size={13} /> : <Copy size={13} />}
+            </button>
+          </div>
+          <div className="border-t border-surface-container-highest pt-3">
+            <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Código de embed</p>
+            <div className="bg-surface-container-low rounded-lg p-3 text-[10px] font-mono text-on-surface-variant leading-relaxed break-all">{embed}</div>
+            <button onClick={() => copy(embed, setCopiedEmbed)} className={`mt-2 w-full py-2 rounded-lg text-xs font-medium transition-colors ${copiedEmbed ? 'bg-emerald-100 text-emerald-700' : 'bg-surface-container-low hover:bg-surface-container text-on-surface'}`}>
+              {copiedEmbed ? '¡Copiado!' : 'Copiar código'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Survey selector list ─────────────────────────────────────────── */
 function SurveyList({ surveys, onSelect }) {
   if (!surveys.length) return (
@@ -903,6 +1028,7 @@ export default function AnalyticsView({ surveys = [], initialSurveyId }) {
             className="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-sm font-semibold text-on-surface hover:bg-surface-container-low transition-colors shadow-sm disabled:opacity-50">
             <RefreshCw size={15} className={loading ? 'animate-spin' : ''} /> Actualizar
           </button>
+          <SharePanel surveyId={selectedSurvey?.id} />
           <div className="relative">
             <button onClick={() => setExportMenu(v=>!v)} disabled={!totalResps}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-semibold hover:bg-surface-tint transition-colors shadow-sm disabled:opacity-40">
@@ -992,6 +1118,12 @@ export default function AnalyticsView({ surveys = [], initialSurveyId }) {
               <QuestionCards questions={questions} responses={responses} />
             </div>
           )}
+
+          {/* Abandonment + timing analytics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <AbandonmentChart questions={questions} responses={responses} />
+            <TimingChart questions={questions} responses={responses} />
+          </div>
 
           {/* Responses table */}
           <div className="bg-surface-container-lowest rounded-xl border border-surface-variant ambient-shadow overflow-hidden mb-8">

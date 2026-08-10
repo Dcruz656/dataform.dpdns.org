@@ -6,10 +6,10 @@ const STORAGE_KEY = id => `dataform_answered_${id}`;
 
 export default function PublicSurveyView({ surveyId }) {
   const [survey, setSurvey] = useState(null);
-  const [status, setStatus] = useState('loading'); // loading | already_answered | ready | notfound | inactive | submitted
+  const [status, setStatus] = useState('loading');
+  // loading | already_answered | ready | notfound | inactive | not_yet | expired | responses_full | submitted
 
   useEffect(() => {
-    // Check if already answered on this device
     if (localStorage.getItem(STORAGE_KEY(surveyId))) {
       setStatus('already_answered');
       return;
@@ -19,9 +19,27 @@ export default function PublicSurveyView({ surveyId }) {
       .select('*')
       .eq('id', surveyId)
       .single()
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (error || !data) { setStatus('notfound'); return; }
-        if (!data.is_active)  { setStatus('inactive'); return; }
+        if (!data.is_active) { setStatus('inactive'); return; }
+
+        // Time limit check
+        if (data.time_limit) {
+          const now = new Date();
+          if (data.start_date && now < new Date(data.start_date)) { setSurvey(data); setStatus('not_yet'); return; }
+          if (data.end_date   && now > new Date(data.end_date))   { setSurvey(data); setStatus('expired');  return; }
+        }
+
+        // Response limit check
+        const maxResponses = data.theme?._extra?.maxResponses ?? 0;
+        if (maxResponses > 0) {
+          const { count } = await supabase
+            .from('responses')
+            .select('*', { count: 'exact', head: true })
+            .eq('survey_id', data.id);
+          if (count >= maxResponses) { setSurvey(data); setStatus('responses_full'); return; }
+        }
+
         setSurvey(data);
         setStatus('ready');
       });
@@ -32,6 +50,7 @@ export default function PublicSurveyView({ surveyId }) {
     setStatus('submitted');
   };
 
+  /* ── Loading ── */
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -40,6 +59,7 @@ export default function PublicSurveyView({ surveyId }) {
     );
   }
 
+  /* ── Already answered ── */
   if (status === 'already_answered') {
     const handleAnswerAgain = () => {
       localStorage.removeItem(STORAGE_KEY(surveyId));
@@ -62,10 +82,7 @@ export default function PublicSurveyView({ surveyId }) {
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2">Ya respondiste esta encuesta</h1>
           <p className="text-slate-500 mb-6">Tu respuesta ya fue registrada desde este dispositivo. ¡Gracias por participar!</p>
-          <button
-            onClick={handleAnswerAgain}
-            className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2 transition-colors"
-          >
+          <button onClick={handleAnswerAgain} className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2 transition-colors">
             Contestar de nuevo
           </button>
         </div>
@@ -73,6 +90,49 @@ export default function PublicSurveyView({ surveyId }) {
     );
   }
 
+  /* ── Not yet available ── */
+  if (status === 'not_yet') {
+    const fmt = d => d ? new Intl.DateTimeFormat('es-MX', { dateStyle: 'long', timeStyle: 'short' }).format(new Date(d)) : '';
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans p-6">
+        <div className="text-center max-w-sm">
+          <p className="text-5xl mb-4">⏳</p>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Todavía no disponible</h1>
+          <p className="text-slate-500">
+            Esta encuesta abrirá el <strong>{fmt(survey?.start_date)}</strong>.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Expired ── */
+  if (status === 'expired') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans p-6">
+        <div className="text-center max-w-sm">
+          <p className="text-5xl mb-4">🔒</p>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Encuesta cerrada</h1>
+          <p className="text-slate-500">El período de esta encuesta ha finalizado. Gracias por tu interés.</p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Responses full ── */
+  if (status === 'responses_full') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans p-6">
+        <div className="text-center max-w-sm">
+          <p className="text-5xl mb-4">✅</p>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Cupo lleno</h1>
+          <p className="text-slate-500">Esta encuesta ya alcanzó el límite de respuestas. ¡Gracias por tu interés!</p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Not found ── */
   if (status === 'notfound') {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans p-6">
@@ -85,6 +145,7 @@ export default function PublicSurveyView({ surveyId }) {
     );
   }
 
+  /* ── Inactive ── */
   if (status === 'inactive') {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans p-6">
@@ -97,6 +158,7 @@ export default function PublicSurveyView({ surveyId }) {
     );
   }
 
+  /* ── Submitted ── */
   if (status === 'submitted') {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans p-6">
@@ -113,13 +175,16 @@ export default function PublicSurveyView({ surveyId }) {
     );
   }
 
-  // Raw DB row — individual columns, not theme._config
+  // Raw DB row — build surveyConfig with all fields
   const surveyConfig = {
-    title: survey.title ?? survey.name,
-    instructions: survey.instructions ?? '',
-    requireName: survey.require_name ?? false,
-    conversational: survey.conversational ?? false,
-    scoreRanges: survey.score_ranges ?? [],
+    title:           survey.title ?? survey.name,
+    instructions:    survey.instructions ?? '',
+    requireName:     survey.require_name ?? false,
+    conversational:  survey.conversational ?? false,
+    scoreRanges:     survey.score_ranges ?? [],
+    thankYouMessage: survey.theme?._extra?.thankYouMessage ?? '',
+    redirectUrl:     survey.theme?._extra?.redirectUrl     ?? '',
+    webhookUrl:      survey.theme?._extra?.webhookUrl      ?? '',
   };
 
   return (

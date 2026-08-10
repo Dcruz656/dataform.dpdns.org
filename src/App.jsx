@@ -33,6 +33,10 @@ export default function App() {
     startDate: '',
     endDate: '',
     scoreRanges: [],
+    maxResponses: 0,
+    thankYouMessage: '',
+    redirectUrl: '',
+    webhookUrl: '',
   });
 
   const [questions, setQuestions] = useState(DEFAULT_QUESTIONS);
@@ -101,6 +105,10 @@ export default function App() {
           timeLimit: surveyConfig.timeLimit,
           startDate: surveyConfig.startDate,
           endDate: surveyConfig.endDate,
+          maxResponses: surveyConfig.maxResponses,
+          thankYouMessage: surveyConfig.thankYouMessage,
+          redirectUrl: surveyConfig.redirectUrl,
+          webhookUrl: surveyConfig.webhookUrl,
         },
       };
       try {
@@ -153,6 +161,10 @@ export default function App() {
           timeLimit: surveyConfig.timeLimit,
           startDate: surveyConfig.startDate,
           endDate: surveyConfig.endDate,
+          maxResponses: surveyConfig.maxResponses,
+          thankYouMessage: surveyConfig.thankYouMessage,
+          redirectUrl: surveyConfig.redirectUrl,
+          webhookUrl: surveyConfig.webhookUrl,
         },
       };
       const survey = await surveysApi.create({
@@ -188,6 +200,10 @@ export default function App() {
       startDate: '',
       endDate: '',
       scoreRanges: [],
+      maxResponses: 0,
+      thankYouMessage: '',
+      redirectUrl: '',
+      webhookUrl: '',
     });
     setQuestions(DEFAULT_QUESTIONS);
     setSaveStatus('idle');
@@ -211,6 +227,10 @@ export default function App() {
         startDate: _config.startDate ?? '',
         endDate: _config.endDate ?? '',
         scoreRanges: survey.score_ranges ?? [],
+        maxResponses: _config.maxResponses ?? 0,
+        thankYouMessage: _config.thankYouMessage ?? '',
+        redirectUrl: _config.redirectUrl ?? '',
+        webhookUrl: _config.webhookUrl ?? '',
       });
       setQuestions(survey.questions ?? []);
       navigate('builder');
@@ -415,6 +435,37 @@ export default function App() {
                   onDelete={() => setSurveyConfig(c => ({ ...c, scoreRanges: c.scoreRanges.filter(r => r.id !== range.id) }))}
                 />
               ))}
+            </div>
+            <div className="border-t border-surface-container-highest pt-2 space-y-2">
+              <span className="text-xs font-bold text-on-surface-variant uppercase tracking-wider block">Avanzado</span>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-on-surface-variant block">Límite de respuestas</label>
+                <input type="number" min="0" value={surveyConfig.maxResponses}
+                  onChange={e => setSurveyConfig(c => ({ ...c, maxResponses: Math.max(0, Number(e.target.value)) }))}
+                  placeholder="0 = ilimitado"
+                  className="w-full bg-white border border-surface-container-highest rounded px-2 py-1 text-xs text-on-surface outline-none focus:border-primary" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-on-surface-variant block">Mensaje de gracias</label>
+                <input type="text" value={surveyConfig.thankYouMessage}
+                  onChange={e => setSurveyConfig(c => ({ ...c, thankYouMessage: e.target.value }))}
+                  placeholder="¡Gracias por participar!"
+                  className="w-full bg-white border border-surface-container-highest rounded px-2 py-1 text-xs text-on-surface outline-none focus:border-primary" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-on-surface-variant block">URL de redirección</label>
+                <input type="url" value={surveyConfig.redirectUrl}
+                  onChange={e => setSurveyConfig(c => ({ ...c, redirectUrl: e.target.value }))}
+                  placeholder="https://tu-sitio.com"
+                  className="w-full bg-white border border-surface-container-highest rounded px-2 py-1 text-xs text-on-surface outline-none focus:border-primary" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-on-surface-variant block">Webhook URL</label>
+                <input type="url" value={surveyConfig.webhookUrl}
+                  onChange={e => setSurveyConfig(c => ({ ...c, webhookUrl: e.target.value }))}
+                  placeholder="https://hook.make.com/..."
+                  className="w-full bg-white border border-surface-container-highest rounded px-2 py-1 text-xs text-on-surface outline-none focus:border-primary" />
+              </div>
             </div>
           </div>
         )}

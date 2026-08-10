@@ -63,6 +63,21 @@ export default function PreviewMode({ surveyConfig, questions, surveyId, onClose
         score,
         scoreRangeTitle: scoreRange?.title ?? null,
       }).catch(err => console.error('[submit] background save failed:', err));
+
+      // Fire webhook if configured
+      if (surveyConfig?.webhookUrl) {
+        fetch(surveyConfig.webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            survey_id: surveyId,
+            respondent_name: respondentName || null,
+            answers,
+            score,
+            submitted_at: new Date().toISOString(),
+          }),
+        }).catch(() => {});
+      }
     }
   };
 
@@ -70,7 +85,13 @@ export default function PreviewMode({ surveyConfig, questions, surveyId, onClose
     if (surveyConfig?.scoreRanges?.length > 0 && finalScore !== null) {
       return <ResultScreen score={finalScore} ranges={surveyConfig.scoreRanges} onClose={onClose} />;
     }
-    return <ThankYouScreen onClose={onClose} />;
+    return (
+      <ThankYouScreen
+        onClose={onClose}
+        message={surveyConfig?.thankYouMessage}
+        redirectUrl={surveyConfig?.redirectUrl}
+      />
+    );
   }
 
   return (
@@ -622,15 +643,26 @@ function ResultScreen({ score, ranges, onClose }) {
   );
 }
 
-function ThankYouScreen({ onClose }) {
+function ThankYouScreen({ onClose, message, redirectUrl }) {
+  useEffect(() => {
+    if (!redirectUrl) return;
+    const t = setTimeout(() => { window.location.href = redirectUrl; }, 3500);
+    return () => clearTimeout(t);
+  }, [redirectUrl]);
+
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center font-sans">
       <div className="text-center max-w-md animate-slide-in">
         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <Check size={38} className="text-green-600" />
         </div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-3">¡Gracias por tu respuesta!</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-3">
+          {message || '¡Gracias por tu respuesta!'}
+        </h1>
         <p className="text-slate-500 text-lg mb-8">Tu opinión ha sido registrada exitosamente.</p>
+        {redirectUrl && (
+          <p className="text-slate-400 text-sm mb-4">Serás redirigido en unos segundos...</p>
+        )}
         <button onClick={onClose} className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm">
           Cerrar
         </button>
