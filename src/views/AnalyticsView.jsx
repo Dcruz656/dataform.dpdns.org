@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ChevronLeft, RefreshCw, Download, FileText, Sheet, TrendingUp, Users, Clock, Star } from 'lucide-react';
+import { ChevronLeft, RefreshCw, Download, FileText, Sheet, TrendingUp, Users, Clock, Star, Sparkles, AlertTriangle } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { COLORS } from '../constants';
@@ -350,20 +350,118 @@ function SliderChart({ question, responses }) {
   );
 }
 
-function TextChart({ responses, question }) {
-  const answers = responses.map(r => ({ text: r.answers?.[question.id], name: r.respondent_name, date: r.submitted_at })).filter(a => a.text?.toString().trim());
-  if (!answers.length) return <EmptyQ />;
+const LS_ANTHROPIC_KEY = 'df_anthropic_key';
+
+function AiOutput({ text }) {
   return (
-    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-      {answers.map((a, i) => (
-        <div key={i} className="p-3 bg-surface-container-low rounded-xl border border-surface-variant">
-          <div className="flex justify-between items-center mb-1.5">
-            <span className="text-xs font-semibold text-on-surface-variant">{a.name || `Respuesta ${i + 1}`}</span>
-            <span className="text-xs text-on-surface-variant">{fmtDateShort(a.date)}</span>
+    <div className="text-sm text-on-surface leading-relaxed space-y-1">
+      {text.split('\n').filter(Boolean).map((line, i) => {
+        const parts = line.split(/\*\*(.*?)\*\*/g);
+        return (
+          <p key={i}>
+            {parts.map((part, j) => j % 2 === 1 ? <strong key={j}>{part}</strong> : part)}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+function TextChart({ responses, question }) {
+  const answers = responses
+    .map(r => ({ text: r.answers?.[question.id], name: r.respondent_name, date: r.submitted_at }))
+    .filter(a => a.text?.toString().trim());
+  const [aiResult, setAiResult]   = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError]     = useState(null);
+
+  if (!answers.length) return <EmptyQ />;
+
+  const handleAnalyze = async () => {
+    const key = localStorage.getItem(LS_ANTHROPIC_KEY);
+    if (!key) {
+      setAiError('Configura tu API key de Anthropic en Configuración para usar esta función.');
+      return;
+    }
+    setAiLoading(true);
+    setAiError(null);
+    setAiResult(null);
+    try {
+      const texts = answers.slice(0, 50).map((a, i) => `${i + 1}. "${a.text}"`).join('\n');
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 400,
+          messages: [{
+            role: 'user',
+            content: `Analiza estas ${answers.length} respuestas a la pregunta: "${question.text}"\n\nRespuestas:\n${texts}\n\nResponde en español con:\n1. **Temas principales** (2-3 puntos breves)\n2. **Sentimiento general** (positivo/neutro/negativo con %)\n3. **Insight clave** (1 frase)\n\nSé muy conciso.`,
+          }],
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error?.message || `Error ${res.status}`);
+      }
+      const data = await res.json();
+      setAiResult(data.content?.[0]?.text || '');
+    } catch (e) {
+      setAiError(e.message || 'Error al conectar con Anthropic');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+        {answers.map((a, i) => (
+          <div key={i} className="p-3 bg-surface-container-low rounded-xl border border-surface-variant">
+            <div className="flex justify-between items-center mb-1.5">
+              <span className="text-xs font-semibold text-on-surface-variant">{a.name || `Respuesta ${i + 1}`}</span>
+              <span className="text-xs text-on-surface-variant">{fmtDateShort(a.date)}</span>
+            </div>
+            <p className="text-sm text-on-surface leading-relaxed">"{String(a.text)}"</p>
           </div>
-          <p className="text-sm text-on-surface leading-relaxed">"{String(a.text)}"</p>
+        ))}
+      </div>
+
+      {!aiResult && (
+        <button
+          onClick={handleAnalyze}
+          disabled={aiLoading}
+          className="flex items-center gap-1.5 text-xs font-semibold text-primary border border-primary/30 bg-primary/5 hover:bg-primary/10 px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
+        >
+          {aiLoading
+            ? <><RefreshCw size={12} className="animate-spin" /> Analizando...</>
+            : <><Sparkles size={12} /> Analizar con IA</>}
+        </button>
+      )}
+
+      {aiError && (
+        <div className="flex items-start gap-2 text-xs text-error bg-error-container/30 rounded-lg px-3 py-2">
+          <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
+          <span>{aiError}</span>
         </div>
-      ))}
+      )}
+
+      {aiResult && (
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-primary flex items-center gap-1.5">
+              <Sparkles size={12} /> Análisis IA
+            </span>
+            <button onClick={() => setAiResult(null)} className="text-xs text-on-surface-variant hover:text-on-surface leading-none">✕</button>
+          </div>
+          <AiOutput text={aiResult} />
+        </div>
+      )}
     </div>
   );
 }

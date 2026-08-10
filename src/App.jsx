@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { LayoutDashboard, PenTool, BarChart3, Palette, Archive, Menu, X, LogOut, ClipboardList, Bell, HelpCircle, Search, Shield } from 'lucide-react';
+import { LayoutDashboard, PenTool, BarChart3, Palette, Archive, Menu, X, LogOut, ClipboardList, Bell, HelpCircle, Search, Shield, Settings } from 'lucide-react';
 import { DEFAULT_QUESTIONS } from './constants';
 import NavItem from './components/NavItem';
 import BuilderView from './components/builder/BuilderView';
@@ -10,6 +10,7 @@ import AppearanceView from './views/AppearanceView';
 import ArchiveView from './views/ArchiveView';
 import MySurveysView from './views/MySurveysView';
 import AdminView from './views/AdminView';
+import SettingsView from './views/SettingsView';
 import LoginView from './views/LoginView';
 import { useAuth } from './contexts/AuthContext';
 import { surveysApi, bankApi, adminApi } from './lib/db';
@@ -379,6 +380,7 @@ export default function App() {
             active={activeTab === 'archive'}
             onClick={() => navigate('archive')}
           />
+          <NavItem icon={<Settings size={18} />} label="Configuración" active={activeTab === 'settings'} onClick={() => navigate('settings')} />
           {isAdmin && (
             <NavItem icon={<Shield size={18} />} label="Admin" active={activeTab === 'admin'} onClick={() => navigate('admin')} />
           )}
@@ -514,6 +516,7 @@ export default function App() {
               />
             )}
             {activeTab === 'appearance' && <AppearanceView theme={theme} setTheme={setTheme} />}
+            {activeTab === 'settings' && <SettingsView />}
             {activeTab === 'admin' && isAdmin && <AdminView />}
           </div>
           <footer className="hidden md:block px-4 md:px-8 py-4 border-t border-surface-container-highest bg-surface-container-lowest text-center text-xs text-on-surface-variant flex-shrink-0">
@@ -530,6 +533,7 @@ export default function App() {
             { tab: 'analytics',  icon: <BarChart3 size={20} />,       label: 'Analítica' },
             { tab: 'appearance', icon: <Palette size={20} />,         label: 'Apariencia' },
             { tab: 'archive',    icon: <Archive size={20} />,         label: 'Archivo' },
+            { tab: 'settings',   icon: <Settings size={20} />,        label: 'Config.' },
             ...(isAdmin ? [{ tab: 'admin', icon: <Shield size={20} />, label: 'Admin' }] : []),
           ].map(({ tab, icon, label }) => (
             <button
