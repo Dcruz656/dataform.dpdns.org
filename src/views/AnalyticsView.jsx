@@ -450,43 +450,274 @@ function SurveyList({ surveys, onSelect }) {
 
 /* ── PDF export ───────────────────────────────────────────────────── */
 function exportPDF({ survey, questions, responses }) {
-  const BLUE = [37,99,235]; const GRAY = [100,116,139]; const LIGHT = [248,250,252];
-  const title = survey.title ?? survey.name ?? 'Encuesta';
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const W = doc.internal.pageSize.getWidth();
-  doc.setFillColor(...BLUE); doc.rect(0,0,W,20,'F');
-  doc.setTextColor(255,255,255); doc.setFontSize(14); doc.setFont('helvetica','bold');
-  doc.text('DATAFORM', 12, 13);
-  doc.setFontSize(10); doc.setFont('helvetica','normal');
-  doc.text(`Reporte — ${title}`, 42, 13);
-  doc.setFontSize(8); doc.text(new Date().toLocaleString('es-MX'), W-12, 13, { align:'right' });
-  doc.setFillColor(...LIGHT); doc.rect(0,20,W,12,'F');
-  doc.setTextColor(...GRAY); doc.setFontSize(8);
-  doc.text(`Total respuestas: ${responses.length}   ·   Primera: ${fmtDateShort(responses[responses.length-1]?.submitted_at)}   ·   Última: ${fmtDateShort(responses[0]?.submitted_at)}`, 12, 28);
-  let y = 38;
+  // Palette
+  const BLUE  = [37,  99,  235];
+  const GRAY  = [100, 116, 139];
+  const LIGHT = [248, 250, 252];
+  const WHITE = [255, 255, 255];
+  const DARK  = [15,  23,  42 ];
+  const RED   = [239, 68,  68 ];
+  const GREEN = [22,  163, 74 ];
+  const BAR_PALETTE = [
+    [37, 99, 235],[124, 58, 237],[16, 185, 129],
+    [245, 158, 11],[239, 68, 68],[6, 182, 212],
+    [236, 72, 153],[34, 197, 94],
+  ];
+
+  const title  = survey.title ?? survey.name ?? 'Encuesta';
+  const doc    = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const W      = doc.internal.pageSize.getWidth();
+  const H      = doc.internal.pageSize.getHeight();
   const realQs = questions.filter(q => q.type !== 'section');
-  realQs.forEach((q, qi) => {
-    if (y > 170) { doc.addPage(); y = 15; }
-    doc.setTextColor(...BLUE); doc.setFontSize(9); doc.setFont('helvetica','bold');
-    doc.text(`P${qi+1}. ${(q.text||'').slice(0,80)}`, 12, y);
-    let body = [];
-    if (q.type === 'multiple_choice') { const c = getChoiceCounts(responses, q.id); body = c.map(d=>[d.name, d.value, responses.length ? `${Math.round((d.value/responses.length)*100)}%`:'-']); }
-    else if (q.type === 'rating') { const a = getNumericAvg(responses,q.id); body = a!=null?[[`Promedio: ${a.toFixed(2)} / ${q.maxStars||5}`,responses.length]]:[['-',0]]; }
-    else if (q.type === 'nps') { const s = getNPSScore(responses,q.id); body = s!=null?[[`NPS: ${s}`,responses.length]]:[['-',0]]; }
-    else if (q.type === 'slider') { const a = getNumericAvg(responses,q.id); body = a!=null?[[`Promedio: ${a.toFixed(2)}`,'']]:[['-','']]; }
-    else { const t = responses.map(r=>r.answers?.[q.id]).filter(v=>v?.toString().trim()).slice(0,8); body = t.map((v,i)=>[`${i+1}.`,String(v).slice(0,120)]); }
-    if (body.length) { autoTable(doc, { startY:y+5, head:[['Respuesta','Cantidad','%']], body, styles:{fontSize:7}, headStyles:{fillColor:BLUE,textColor:255}, margin:{left:12,right:12}, tableWidth:180 }); }
-    y = (doc.lastAutoTable?.finalY ?? y+5) + 8;
+
+  // ── Page chrome ──────────────────────────────────────────────────────
+  const drawHeader = () => {
+    doc.setFillColor(...BLUE); doc.rect(0, 0, W, 20, 'F');
+    doc.setTextColor(...WHITE);
+    doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.text('DATAFORM', 12, 13);
+    doc.setFontSize(9);  doc.setFont('helvetica', 'normal'); doc.text(`Reporte — ${title}`, 42, 13);
+    doc.setFontSize(8);  doc.text(new Date().toLocaleString('es-MX'), W - 12, 13, { align: 'right' });
+  };
+  const drawMeta = () => {
+    doc.setFillColor(...LIGHT); doc.rect(0, 20, W, 11, 'F');
+    doc.setTextColor(...GRAY); doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+    doc.text(
+      `Total respuestas: ${responses.length}   ·   Primera: ${fmtDateShort(responses[responses.length-1]?.submitted_at)}   ·   Última: ${fmtDateShort(responses[0]?.submitted_at)}`,
+      12, 27
+    );
+  };
+
+  // ensure at least `needed` mm remain on current page, otherwise add one
+  const ensureSpace = (needed, y) => {
+    if (y + needed > H - 14) { doc.addPage(); drawHeader(); drawMeta(); return 34; }
+    return y;
+  };
+
+  // ── Chart primitives ─────────────────────────────────────────────────
+  // Horizontal bar chart: returns height used
+  const drawHBar = (counts, total, x, y, availW) => {
+    const LABEL_W = Math.min(78, availW * 0.38);
+    const BAR_W   = availW - LABEL_W - 30;
+    const ROW_H   = 13;
+    counts.forEach((d, i) => {
+      const ratio   = total > 0 ? d.value / total : 0;
+      const fillW   = ratio > 0 ? Math.max(1.5, ratio * BAR_W) : 0;
+      const barY    = y + i * ROW_H + 1;
+      const barH    = ROW_H - 5;
+
+      const label = d.name.length > 18 ? d.name.slice(0, 17) + '…' : d.name;
+      doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(...GRAY);
+      doc.text(label, x + LABEL_W - 2, barY + barH / 2 + 1, { align: 'right' });
+
+      doc.setFillColor(241, 245, 249);
+      doc.rect(x + LABEL_W, barY, BAR_W, barH, 'F');
+
+      if (fillW > 0) {
+        doc.setFillColor(...BAR_PALETTE[i % BAR_PALETTE.length]);
+        doc.rect(x + LABEL_W, barY, fillW, barH, 'F');
+      }
+
+      doc.setFontSize(6.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...DARK);
+      doc.text(`${d.value}  ${Math.round(ratio * 100)}%`, x + LABEL_W + BAR_W + 3, barY + barH / 2 + 1);
+    });
+    return counts.length * ROW_H + 4;
+  };
+
+  // NPS visual: large score + 3 vertical bars — returns height used
+  const drawNPS = (score, npsVals, x, y, availW) => {
+    const det   = npsVals.filter(n => n <= 6).length;
+    const pas   = npsVals.filter(n => n >= 7 && n <= 8).length;
+    const pro   = npsVals.filter(n => n >= 9).length;
+    const total = det + pas + pro || 1;
+    const scoreColor = score != null ? (score >= 50 ? GREEN : score >= 0 ? BLUE : RED) : GRAY;
+    const scoreStr   = score != null ? (score > 0 ? `+${score}` : String(score)) : '—';
+    const BAR_H_MAX  = 30;
+
+    // Large score (left column)
+    doc.setFontSize(22); doc.setFont('helvetica', 'bold'); doc.setTextColor(...scoreColor);
+    doc.text(scoreStr, x + 18, y + 14, { align: 'center' });
+    doc.setFontSize(6);  doc.setFont('helvetica', 'normal'); doc.setTextColor(...GRAY);
+    doc.text('NPS Score', x + 18, y + 19, { align: 'center' });
+
+    // 3 vertical bars (right)
+    const barsX  = x + 44;
+    const barsW  = availW - 48;
+    const barW3  = barsW / 3 - 4;
+    const maxCnt = Math.max(det, pas, pro, 1);
+    const cats   = [
+      { label: 'Detractores', range: '0–6',  count: det, color: RED             },
+      { label: 'Pasivos',     range: '7–8',  count: pas, color: [234, 179,   8] },
+      { label: 'Promotores',  range: '9–10', count: pro, color: GREEN           },
+    ];
+    cats.forEach((cat, i) => {
+      const bx = barsX + i * (barW3 + 4);
+      const bh = cat.count > 0 ? Math.max(2, (cat.count / maxCnt) * BAR_H_MAX) : 0;
+      const by = y + BAR_H_MAX - bh;
+
+      doc.setFillColor(241, 245, 249); doc.rect(bx, y, barW3, BAR_H_MAX, 'F');
+      if (bh > 0) { doc.setFillColor(...cat.color); doc.rect(bx, by, barW3, bh, 'F'); }
+
+      doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(...DARK);
+      doc.text(String(cat.count), bx + barW3 / 2, bh > 0 ? by - 2 : y - 2, { align: 'center' });
+
+      const labY = y + BAR_H_MAX + 5;
+      doc.setFontSize(6.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...cat.color);
+      doc.text(cat.label, bx + barW3 / 2, labY, { align: 'center' });
+      doc.setFontSize(6); doc.setFont('helvetica', 'normal'); doc.setTextColor(...GRAY);
+      doc.text(`${cat.range}  ${Math.round((cat.count / total) * 100)}%`, bx + barW3 / 2, labY + 4, { align: 'center' });
+    });
+    return BAR_H_MAX + 14;
+  };
+
+  // Rating visual: avg + filled bar — returns height used
+  const drawRating = (avg, maxStars, x, y, availW) => {
+    if (avg == null) return 8;
+    const barW = Math.min(availW - 4, 140);
+    const ratio = avg / maxStars;
+    doc.setFontSize(15); doc.setFont('helvetica', 'bold'); doc.setTextColor(245, 158, 11);
+    doc.text(avg.toFixed(1), x, y + 7);
+    doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(...GRAY);
+    doc.text(`/ ${maxStars} estrellas`, x + 13, y + 7);
+    doc.setFillColor(241, 245, 249); doc.rect(x, y + 10, barW, 5, 'F');
+    doc.setFillColor(245, 158, 11); doc.rect(x, y + 10, barW * ratio, 5, 'F');
+    return 20;
+  };
+
+  // ── Build page 1 ─────────────────────────────────────────────────────
+  drawHeader(); drawMeta();
+
+  // KPI tiles (y 34 → 55)
+  const KPI_Y   = 34;
+  const KPI_H   = 20;
+  const KPI_W   = 65;
+  const KPI_GAP = (W - 24 - 4 * KPI_W) / 3;
+
+  const npsQ     = realQs.find(q => q.type === 'nps');
+  const npsScore = npsQ ? getNPSScore(responses, npsQ.id) : null;
+  const npsAcc   = npsScore != null ? (npsScore >= 50 ? GREEN : npsScore >= 0 ? BLUE : RED) : GRAY;
+  const npsKpiStr = npsScore != null ? (npsScore > 0 ? `+${npsScore}` : String(npsScore)) : '—';
+
+  const starQ    = realQs.find(q => q.type === 'rating');
+  const starAvg  = starQ ? getNumericAvg(responses, starQ.id) : null;
+
+  const kpis = [
+    { label: 'RESPUESTAS',         value: String(responses.length), accent: BLUE },
+    { label: 'PREGUNTAS',          value: String(realQs.length),    accent: [124, 58, 237] },
+    { label: 'PROMEDIO ESTRELLAS', value: starAvg != null ? `${starAvg.toFixed(1)} / ${starQ.maxStars || 5}` : '—', accent: [245, 158, 11] },
+    { label: 'NPS SCORE',          value: npsKpiStr,                accent: npsAcc },
+  ];
+  kpis.forEach((k, i) => {
+    const x = 12 + i * (KPI_W + KPI_GAP);
+    doc.setFillColor(...WHITE); doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(x, KPI_Y, KPI_W, KPI_H, 2, 2, 'FD');
+    doc.setFillColor(...k.accent); doc.rect(x, KPI_Y, 3, KPI_H, 'F');
+    doc.setFontSize(5.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(...GRAY);
+    doc.text(k.label, x + 6, KPI_Y + 6);
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(...k.accent);
+    doc.text(k.value, x + 6, KPI_Y + 15);
   });
+
+  let y = KPI_Y + KPI_H + 8;  // ≈ 62
+
+  // ── Question loop ─────────────────────────────────────────────────────
+  realQs.forEach((q, qi) => {
+    const AVAIL_W = W - 24;
+
+    y = ensureSpace(18, y);
+    doc.setTextColor(...BLUE); doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+    doc.text(`P${qi+1}. ${(q.text || '').slice(0, 90)}`, 12, y);
+    y += 5;
+
+    if (q.type === 'multiple_choice') {
+      const counts = getChoiceCounts(responses, q.id);
+      if (counts.length) {
+        y = ensureSpace(counts.length * 13 + 8, y);
+        y += drawHBar(counts, responses.length, 12, y, AVAIL_W);
+      } else { y += 6; }
+    }
+
+    else if (q.type === 'nps') {
+      const npsVals = responses.map(r => r.answers?.[q.id]).filter(v => v != null && !isNaN(Number(v))).map(Number);
+      const score   = npsVals.length ? getNPSScore(responses, q.id) : null;
+      y = ensureSpace(50, y);
+      y += drawNPS(score, npsVals, 12, y, AVAIL_W);
+    }
+
+    else if (q.type === 'rating') {
+      const avg = getNumericAvg(responses, q.id);
+      y = ensureSpace(24, y);
+      y += drawRating(avg, q.maxStars || 5, 12, y, AVAIL_W);
+    }
+
+    else if (q.type === 'slider') {
+      const avg = getNumericAvg(responses, q.id);
+      if (avg != null) {
+        y = ensureSpace(20, y);
+        const min   = q.min ?? 0;
+        const max   = q.max ?? 10;
+        const barW  = Math.min(AVAIL_W - 4, 150);
+        const ratio = (avg - min) / (max - min || 1);
+        doc.setFontSize(14); doc.setFont('helvetica', 'bold'); doc.setTextColor(...BLUE);
+        doc.text(avg.toFixed(1), 12, y + 6);
+        doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(...GRAY);
+        doc.text(`Promedio · rango ${min}–${max}`, 26, y + 6);
+        doc.setFillColor(241, 245, 249); doc.rect(12, y + 9, barW, 5, 'F');
+        doc.setFillColor(...BLUE);       doc.rect(12, y + 9, barW * ratio, 5, 'F');
+        y += 19;
+      } else { y += 6; }
+    }
+
+    else {
+      // text, ranking, matrix, file — show up to 8 responses as table
+      const rows = responses.map(r => r.answers?.[q.id]).filter(v => v?.toString().trim()).slice(0, 8);
+      if (rows.length) {
+        const body = rows.map((v, i) => [
+          `${i+1}.`,
+          typeof v === 'object' ? Object.values(v).slice(0, 3).join(', ') : String(v).slice(0, 120),
+        ]);
+        y = ensureSpace(body.length * 8 + 16, y);
+        autoTable(doc, {
+          startY: y, head: [['#', 'Respuesta']], body,
+          styles: { fontSize: 7 }, headStyles: { fillColor: BLUE, textColor: 255 },
+          alternateRowStyles: { fillColor: LIGHT }, margin: { left: 12, right: 12 },
+        });
+        y = (doc.lastAutoTable?.finalY ?? y) + 8;
+      } else { y += 6; }
+    }
+
+    y += 4;
+  });
+
+  // ── Individual responses table ────────────────────────────────────────
   if (responses.length) {
-    if (y>160) { doc.addPage(); y=15; }
-    doc.setTextColor(...BLUE); doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.text('Respuestas individuales',12,y);
-    autoTable(doc,{ startY:y+4, head:[['Nombre','Fecha',...realQs.slice(0,5).map((_,i)=>`P${i+1}`)]], body:responses.map(r=>[r.respondent_name||'—',fmtDateShort(r.submitted_at),...realQs.slice(0,5).map(q=>{const v=r.answers?.[q.id]; return v==null?'—':typeof v==='object'?Object.values(v).join(', '):String(v).slice(0,30);})]), styles:{fontSize:7.5},headStyles:{fillColor:BLUE,textColor:255},alternateRowStyles:{fillColor:LIGHT},margin:{left:12,right:12} });
+    y = ensureSpace(30, y);
+    doc.setTextColor(...BLUE); doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+    doc.text('Respuestas individuales', 12, y);
+    autoTable(doc, {
+      startY: y + 4,
+      head: [['Nombre', 'Fecha', ...realQs.slice(0, 5).map((_, i) => `P${i+1}`)]],
+      body: responses.map(r => [
+        r.respondent_name || '—',
+        fmtDateShort(r.submitted_at),
+        ...realQs.slice(0, 5).map(q => {
+          const v = r.answers?.[q.id];
+          return v == null ? '—' : typeof v === 'object' ? Object.values(v).join(', ') : String(v).slice(0, 30);
+        }),
+      ]),
+      styles: { fontSize: 7.5 }, headStyles: { fillColor: BLUE, textColor: 255 },
+      alternateRowStyles: { fillColor: LIGHT }, margin: { left: 12, right: 12 },
+    });
   }
+
+  // ── Footers ───────────────────────────────────────────────────────────
   const pg = doc.internal.getNumberOfPages();
-  for(let i=1;i<=pg;i++){ doc.setPage(i); doc.setFontSize(7); doc.setTextColor(...GRAY); doc.text(`Página ${i} de ${pg} · DataForm`,W/2,doc.internal.pageSize.getHeight()-6,{align:'center'}); }
-  const slug = title.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-');
-  doc.save(`${slug}_${new Date().toISOString().slice(0,10)}.pdf`);
+  for (let i = 1; i <= pg; i++) {
+    doc.setPage(i); doc.setFontSize(7); doc.setTextColor(...GRAY);
+    doc.text(`Página ${i} de ${pg} · DataForm`, W / 2, H - 6, { align: 'center' });
+  }
+
+  const slug = title.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-');
+  doc.save(`${slug}_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
 /* ── Main component ───────────────────────────────────────────────── */
