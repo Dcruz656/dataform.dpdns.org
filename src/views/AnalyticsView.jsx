@@ -4,6 +4,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { COLORS } from '../constants';
 import { responsesApi, surveysApi } from '../lib/db';
+import { callAI, getActiveProvider, getActiveKey, PROVIDERS } from '../lib/ai';
 
 /* ── Helpers ──────────────────────────────────────────────────────── */
 function fmtDateShort(iso) {
@@ -350,8 +351,6 @@ function SliderChart({ question, responses }) {
   );
 }
 
-const LS_ANTHROPIC_KEY = 'df_anthropic_key';
-
 function AiOutput({ text }) {
   return (
     <div className="text-sm text-on-surface leading-relaxed space-y-1">
@@ -378,9 +377,9 @@ function TextChart({ responses, question }) {
   if (!answers.length) return <EmptyQ />;
 
   const handleAnalyze = async () => {
-    const key = localStorage.getItem(LS_ANTHROPIC_KEY);
-    if (!key) {
-      setAiError('Configura tu API key de Anthropic en Configuración para usar esta función.');
+    if (!getActiveKey()) {
+      const provName = PROVIDERS[getActiveProvider()]?.name ?? 'IA';
+      setAiError(`Configura tu API key de ${provName} en Configuración para usar esta función.`);
       return;
     }
     setAiLoading(true);
@@ -388,31 +387,12 @@ function TextChart({ responses, question }) {
     setAiResult(null);
     try {
       const texts = answers.slice(0, 50).map((a, i) => `${i + 1}. "${a.text}"`).join('\n');
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': key,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 400,
-          messages: [{
-            role: 'user',
-            content: `Analiza estas ${answers.length} respuestas a la pregunta: "${question.text}"\n\nRespuestas:\n${texts}\n\nResponde en español con:\n1. **Temas principales** (2-3 puntos breves)\n2. **Sentimiento general** (positivo/neutro/negativo con %)\n3. **Insight clave** (1 frase)\n\nSé muy conciso.`,
-          }],
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error?.message || `Error ${res.status}`);
-      }
-      const data = await res.json();
-      setAiResult(data.content?.[0]?.text || '');
+      const result = await callAI(
+        `Analiza estas ${answers.length} respuestas a la pregunta: "${question.text}"\n\nRespuestas:\n${texts}\n\nResponde en español con:\n1. **Temas principales** (2-3 puntos breves)\n2. **Sentimiento general** (positivo/neutro/negativo con %)\n3. **Insight clave** (1 frase)\n\nSé muy conciso.`,
+      );
+      setAiResult(result);
     } catch (e) {
-      setAiError(e.message || 'Error al conectar con Anthropic');
+      setAiError(e.message || 'Error al conectar con el proveedor de IA');
     } finally {
       setAiLoading(false);
     }
